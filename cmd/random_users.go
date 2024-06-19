@@ -38,14 +38,15 @@ func (cmd *RandomUsersCmd) Execute() {
 			CsrfToken:           os.Getenv("CSRF_TOKEN"),
 		},
 	)
-	cmd.LeftChildRequest = cmd.Props.MaxChildRequest
 	cmd.UserIDs = make(map[string]string)
+	cmd.LeftChildRequest = cmd.Props.MaxChildRequest
+	cmd.Props.CmdName = cmd.Props.SeedScreenName
+
 	seedUserID := []string{}
 	user, err := cmd.GuestClient.UserByScreenName(cmd.Props.SeedScreenName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	cmd.Props.CmdName = user.Legacy.Name
 	tools.Log(cmd.Props.CmdName, []string{"User", user.RestID}, map[string]interface{}{"User": user})
 	seedUserID = append(seedUserID, user.RestID)
 	cmd.UserIDs[user.RestID] = "ROOT"
@@ -63,7 +64,8 @@ func (cmd *RandomUsersCmd) getUsersFromUserIDs(userIDs []string) {
 		for i := 0; i < cmd.Props.MaxFollowersRequest; i++ {
 			followers, cursor, err := cmd.Client.Followers(userID, bottomCursor)
 			if err != nil {
-				log.Fatal(err)
+				log.Default().Println(err)
+				break
 			}
 			tools.Log(cmd.Props.CmdName, []string{"Followers", userID, strconv.Itoa(i)}, map[string]interface{}{"Followers": followers})
 			for _, follower := range followers {

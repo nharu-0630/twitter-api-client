@@ -25,11 +25,7 @@ func (r *RateLimit) Call() {
 
 func (r *RateLimit) GuestCall() bool {
 	if r.remaining == 0 {
-		if time.Until(r.reset) > 0 {
-			r.Reset()
-			return false
-		}
-		r.Reset()
+		return false
 	}
 	r.remaining--
 	return true

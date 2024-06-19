@@ -61,8 +61,8 @@ func (c *Client) gql(method string, queryID string, operation string, params map
 			}
 		} else {
 			c.rateLimits[operation].Call()
-			log.Default().Printf("Rate limit: %d/%d", c.rateLimits[operation].remaining, c.rateLimits[operation].limit)
 		}
+		log.Default().Printf("Rate limit: %d/%d", c.rateLimits[operation].remaining, c.rateLimits[operation].limit)
 	}
 	if method == "POST" {
 		return nil, nil
@@ -151,6 +151,9 @@ func (c *Client) initializeGuestToken() {
 		panic(err)
 	}
 	c.guestToken = resData["guest_token"].(string)
+	for _, value := range c.rateLimits {
+		value.Reset()
+	}
 }
 
 func (c *Client) initializeClientUUID() {
