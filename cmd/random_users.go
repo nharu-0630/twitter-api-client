@@ -6,25 +6,26 @@ import (
 	"strconv"
 
 	"github.com/nharu-0630/twitter-api-client/api"
-	"github.com/nharu-0630/twitter-api-client/model"
 	"github.com/nharu-0630/twitter-api-client/tools"
 )
 
-type RandomUserFromSeedUsersProps struct {
-	SeedScreenName      []string
+type RandomUsersProps struct {
+	CmdName             string
+	SeedScreenName      string
 	MaxFollowersRequest int
 	MaxChildRequest     int
+	MaxUserLimit        int
 }
 
-type RandomUserFromSeedUsersCmd struct {
-	Props            RandomUserFromSeedUsersProps
+type RandomUsersCmd struct {
+	Props            RandomUsersProps
 	GuestClient      *api.Client
 	Client           *api.Client
-	Users            []model.User
+	UserIDs          map[string]string
 	LeftChildRequest int
 }
 
-func (cmd *RandomUserFromSeedUsersCmd) Execute() {
+func (cmd *RandomUsersCmd) Execute() {
 	cmd.GuestClient = api.NewClient(
 		api.ClientConfig{
 			IsGuestTokenEnabled: true,
@@ -38,21 +39,23 @@ func (cmd *RandomUserFromSeedUsersCmd) Execute() {
 		},
 	)
 	cmd.LeftChildRequest = cmd.Props.MaxChildRequest
-
+	cmd.UserIDs = make(map[string]string)
 	seedUserID := []string{}
-	for _, screenName := range cmd.Props.SeedScreenName {
-		user, err := cmd.GuestClient.UserByScreenName(screenName)
-		if err != nil {
-			log.Fatal(err)
-		}
-		tools.Log("RandomUsersFromSeedUsers", []string{"User", user.ID}, map[string]interface{}{"User": user})
-		seedUserID = append(seedUserID, user.ID)
-		cmd.Users = append(cmd.Users, user)
+	user, err := cmd.GuestClient.UserByScreenName(cmd.Props.SeedScreenName)
+	if err != nil {
+		log.Fatal(err)
 	}
+	cmd.Props.CmdName = user.Legacy.Name
+	tools.Log(cmd.Props.CmdName, []string{"User", user.RestID}, map[string]interface{}{"User": user})
+	seedUserID = append(seedUserID, user.RestID)
+	cmd.UserIDs[user.RestID] = "ROOT"
+	cmd.getUserTweetsFromUserID(user.RestID)
+
+	tools.LogOverwrite(cmd.Props.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs})
 	cmd.getUsersFromUserIDs(seedUserID)
 }
 
-func (cmd *RandomUserFromSeedUsersCmd) getUsersFromUserIDs(userIDs []string) {
+func (cmd *RandomUsersCmd) getUsersFromUserIDs(userIDs []string) {
 	cmd.LeftChildRequest--
 	childUserIDs := []string{}
 	for _, userID := range userIDs {
@@ -62,12 +65,22 @@ func (cmd *RandomUserFromSeedUsersCmd) getUsersFromUserIDs(userIDs []string) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			tools.Log("RandomUsersFromSeedUsers", []string{"Followers", userID, strconv.Itoa(i)}, map[string]interface{}{"Followers": followers})
-			cmd.Users = append(cmd.Users, followers...)
+			tools.Log(cmd.Props.CmdName, []string{"Followers", userID, strconv.Itoa(i)}, map[string]interface{}{"Followers": followers})
 			for _, follower := range followers {
-				childUserIDs = append(childUserIDs, follower.ID)
+				if _, exists := cmd.UserIDs[follower.RestID]; !exists {
+					cmd.UserIDs[follower.RestID] = userID
+					if !follower.Legacy.Protected {
+						cmd.getUserTweetsFromUserID(follower.RestID)
+						if tools.IsJapaneseUser(follower) {
+							childUserIDs = append(childUserIDs, follower.RestID)
+						}
+					}
+				}
 			}
-
+			tools.LogOverwrite(cmd.Props.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs})
+			if len(cmd.UserIDs) > cmd.Props.MaxUserLimit {
+				return
+			}
 			if cursor.BottomCursor == "" {
 				break
 			}
@@ -77,4 +90,13 @@ func (cmd *RandomUserFromSeedUsersCmd) getUsersFromUserIDs(userIDs []string) {
 	if cmd.LeftChildRequest > 0 {
 		cmd.getUsersFromUserIDs(childUserIDs)
 	}
+}
+
+func (cmd *RandomUsersCmd) getUserTweetsFromUserID(userID string) {
+	tweets, _, err := cmd.GuestClient.UserTweets(userID)
+	if err != nil {
+		log.Default().Println(err)
+		return
+	}
+	tools.Log(cmd.Props.CmdName, []string{"Tweets", userID}, map[string]interface{}{"Tweets": tweets})
 }

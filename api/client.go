@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -16,11 +17,18 @@ type ClientConfig struct {
 }
 
 type Client struct {
-	config       ClientConfig
-	client       *http.Client
-	guestToken   string
-	clientUUID   string
-	lastCalledAt time.Time
+	config     ClientConfig
+	client     *http.Client
+	guestToken string
+	clientUUID string
+	rateLimits map[string]*RateLimit
+}
+
+type RateLimit struct {
+	limit     int
+	remaining int
+	interval  time.Duration
+	reset     time.Time
 }
 
 func NewClient(config ClientConfig) *Client {
@@ -28,17 +36,34 @@ func NewClient(config ClientConfig) *Client {
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
-		lastCalledAt: time.Now(),
 	}
 	if config.IsGuestTokenEnabled {
 		client.initializeGuestToken()
 	} else {
 		client.initializeClientUUID()
 	}
+	client.rateLimits = make(map[string]*RateLimit)
+	client.rateLimits["TweetResultByRestId"] = NewRateLimit(500, 15*time.Minute)
+	client.rateLimits["UserByScreenName"] = NewRateLimit(500, 15*time.Minute)
+	client.rateLimits["UserTweets"] = NewRateLimit(50, 15*time.Minute)
+	client.rateLimits["Following"] = NewRateLimit(50, 15*time.Minute)
+	client.rateLimits["Followers"] = NewRateLimit(50, 15*time.Minute)
 	return client
 }
 
 func (c *Client) gql(method string, queryID string, operation string, params map[string]interface{}) (map[string]interface{}, error) {
+	if _, ok := c.rateLimits[operation]; ok {
+		if c.config.IsGuestTokenEnabled {
+			if !c.rateLimits[operation].GuestCall() {
+				log.Default().Println("Rate limit exceeded")
+				c.initializeGuestToken()
+				c.rateLimits[operation].GuestCall()
+			}
+		} else {
+			c.rateLimits[operation].Call()
+			log.Default().Printf("Rate limit: %d/%d", c.rateLimits[operation].remaining, c.rateLimits[operation].limit)
+		}
+	}
 	if method == "POST" {
 		return nil, nil
 	} else if method == "GET" {
@@ -106,6 +131,7 @@ func (c *Client) setAuthorizedHeaders(req *http.Request) {
 }
 
 func (c *Client) initializeGuestToken() {
+	log.Default().Println("Initializing guest token")
 	req, err := http.NewRequest("POST", "https://api.twitter.com/1.1/guest/activate.json", nil)
 	if err != nil {
 		panic(err)
@@ -128,6 +154,7 @@ func (c *Client) initializeGuestToken() {
 }
 
 func (c *Client) initializeClientUUID() {
+	log.Default().Println("Initializing client UUID")
 	clientUUID, err := uuid.NewRandom()
 	if err != nil {
 		panic(err)

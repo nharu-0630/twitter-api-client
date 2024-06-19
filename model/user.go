@@ -12,6 +12,7 @@ type User struct {
 	Legacy             struct {
 		FollowedBy          bool   `json:"followed_by,omitempty"`
 		Following           bool   `json:"following,omitempty"`
+		Protected           bool   `json:"protected,omitempty"`
 		CanDm               bool   `json:"can_dm,omitempty"`
 		CanMediaTag         bool   `json:"can_media_tag,omitempty"`
 		CreatedAt           string `json:"created_at,omitempty"`

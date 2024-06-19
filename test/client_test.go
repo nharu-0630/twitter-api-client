@@ -39,7 +39,7 @@ func TestUserByScreenNameWithGuest(t *testing.T) {
 	log.Default().Println(user)
 }
 
-func TestUserTweetsWithGuest(t *testing.T) {
+func TestUserTweetsWithGuest1(t *testing.T) {
 	client := api.NewClient(api.ClientConfig{
 		IsGuestTokenEnabled: true,
 	})
@@ -55,6 +55,17 @@ func TestUserTweetsWithGuest(t *testing.T) {
 	log.Default().Println(cursor)
 }
 
+func TestUserTweetsWithGuest2(t *testing.T) {
+	client := api.NewClient(api.ClientConfig{
+		IsGuestTokenEnabled: true,
+	})
+
+	_, _, err := client.UserTweets("1803246236272869376")
+	if err.Error() != "user not found" {
+		t.Fatal(err)
+	}
+}
+
 func TestFollowing(t *testing.T) {
 	tools.LoadEnv()
 
@@ -65,6 +76,26 @@ func TestFollowing(t *testing.T) {
 	})
 
 	users, cursor, err := client.Following("1003084799592972288")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(users) == 0 {
+		t.Fatal("users is empty")
+	}
+	log.Default().Println(users)
+	log.Default().Println(cursor)
+}
+
+func TestFollowers(t *testing.T) {
+	tools.LoadEnv()
+
+	client := api.NewClient(api.ClientConfig{
+		IsGuestTokenEnabled: false,
+		AuthToken:           os.Getenv("AUTH_TOKEN"),
+		CsrfToken:           os.Getenv("CSRF_TOKEN"),
+	})
+
+	users, cursor, err := client.Followers("1003084799592972288")
 	if err != nil {
 		t.Fatal(err)
 	}
