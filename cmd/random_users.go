@@ -30,7 +30,6 @@ type RandomUsersCmd struct {
 }
 
 func (cmd *RandomUsersCmd) Execute() {
-
 	cmd.GuestClient = api.NewClient(
 		api.ClientConfig{
 			IsGuestTokenEnabled: true,
@@ -119,10 +118,10 @@ func (cmd *RandomUsersCmd) getUsersFromUserIDs(userIDs []string) {
 						}
 					}
 					tools.LogOverwrite(cmd.Props.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
-					if len(cmd.UserIDs) > cmd.Props.MaxUserLimit {
-						return
-					}
 				}
+			}
+			if len(cmd.UserIDs) > cmd.Props.MaxUserLimit {
+				return
 			}
 			if cursor.BottomCursor == "" {
 				break
