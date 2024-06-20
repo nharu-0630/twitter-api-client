@@ -93,6 +93,10 @@ func ParseTimelineEntriesTweetsWithInjections(data map[string]interface{}) (mode
 			if strings.HasPrefix(entryID, "conversationthread-") {
 				items := content.(map[string]interface{})["items"].([]interface{})
 				for _, item := range items {
+					itemEntryID := item.(map[string]interface{})["entryId"].(string)
+					if !strings.Contains(itemEntryID, "tweet-") {
+						continue
+					}
 					tweetResults := item.(map[string]interface{})["item"].(map[string]interface{})["itemContent"].(map[string]interface{})["tweet_results"].(map[string]interface{})
 					if tweetResults["result"] == nil {
 						continue
