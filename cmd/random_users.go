@@ -63,11 +63,11 @@ func (cmd *RandomUsersCmd) Execute() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tools.Log(cmd.Props.CmdName, []string{"User", user.RestID}, map[string]interface{}{"User": user})
+	tools.Log(cmd.Props.CmdName, []string{"User", user.RestID}, map[string]interface{}{"User": user}, false)
 	seedUserID = append(seedUserID, user.RestID)
 	cmd.UserIDs[user.RestID] = "ROOT"
 	cmd.getUserTweetsFromUserID(user.RestID)
-	tools.LogOverwrite(cmd.Props.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs})
+	tools.LogOverwrite(cmd.Props.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
 
 	cmd.getUsersFromUserIDs(seedUserID)
 
@@ -88,7 +88,7 @@ func (cmd *RandomUsersCmd) Execute() {
 			"SecPerTweet":   time.Since(startDateTime).Seconds() / float64(len(cmd.TweetIDs)),
 		},
 	}
-	tools.Log(cmd.Props.CmdName, []string{"Summary"}, summary)
+	tools.Log(cmd.Props.CmdName, []string{"Summary"}, summary, true)
 	cmd.status("End of the process")
 }
 
@@ -108,7 +108,7 @@ func (cmd *RandomUsersCmd) getUsersFromUserIDs(userIDs []string) {
 				log.Default().Println(err)
 				break
 			}
-			tools.Log(cmd.Props.CmdName, []string{"Followers", userID, strconv.Itoa(i)}, map[string]interface{}{"Followers": followers})
+			tools.Log(cmd.Props.CmdName, []string{"Followers", userID, strconv.Itoa(i)}, map[string]interface{}{"Followers": followers}, false)
 			for _, follower := range followers {
 				if _, exists := cmd.UserIDs[follower.RestID]; !exists {
 					cmd.UserIDs[follower.RestID] = userID
@@ -118,7 +118,7 @@ func (cmd *RandomUsersCmd) getUsersFromUserIDs(userIDs []string) {
 							childUserIDs = append(childUserIDs, follower.RestID)
 						}
 					}
-					tools.LogOverwrite(cmd.Props.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs})
+					tools.LogOverwrite(cmd.Props.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
 					if len(cmd.UserIDs) > cmd.Props.MaxUserLimit {
 						return
 					}
@@ -147,5 +147,5 @@ func (cmd *RandomUsersCmd) getUserTweetsFromUserID(userID string) {
 			cmd.TweetIDs[tweet.RestID] = userID
 		}
 	}
-	tools.Log(cmd.Props.CmdName, []string{"Tweets", userID}, map[string]interface{}{"Tweets": tweets})
+	tools.Log(cmd.Props.CmdName, []string{"Tweets", userID}, map[string]interface{}{"Tweets": tweets}, false)
 }

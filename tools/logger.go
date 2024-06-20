@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func LogRaw(keys []string, res map[string]interface{}) error {
+func LogRaw(keys []string, res map[string]interface{}, indent bool) error {
 	outputDir := os.Getenv("OUTPUT_DIR")
 	if outputDir == "" {
 		return errors.New("output directory is not set")
@@ -30,7 +30,12 @@ func LogRaw(keys []string, res map[string]interface{}) error {
 		return err
 	}
 	defer file.Close()
-	encodedResult, err := json.Marshal(res)
+	var encodedResult []byte
+	if indent {
+		encodedResult, err = json.MarshalIndent(res, "", "  ")
+	} else {
+		encodedResult, err = json.Marshal(res)
+	}
 	if err != nil {
 		return err
 	}
@@ -41,7 +46,7 @@ func LogRaw(keys []string, res map[string]interface{}) error {
 	return nil
 }
 
-func Log(dir string, keys []string, res map[string]interface{}) error {
+func Log(dir string, keys []string, res map[string]interface{}, indent bool) error {
 	outputDir := os.Getenv("OUTPUT_DIR")
 	if outputDir == "" {
 		return errors.New("output directory is not set")
@@ -62,7 +67,12 @@ func Log(dir string, keys []string, res map[string]interface{}) error {
 		return err
 	}
 	defer file.Close()
-	encodedResult, err := json.Marshal(res)
+	var encodedResult []byte
+	if indent {
+		encodedResult, err = json.MarshalIndent(res, "", "  ")
+	} else {
+		encodedResult, err = json.Marshal(res)
+	}
 	if err != nil {
 		return err
 	}
@@ -73,7 +83,7 @@ func Log(dir string, keys []string, res map[string]interface{}) error {
 	return nil
 }
 
-func LogOverwrite(dir string, keys []string, res map[string]interface{}) error {
+func LogOverwrite(dir string, keys []string, res map[string]interface{}, indent bool) error {
 	outputDir := os.Getenv("OUTPUT_DIR")
 	if outputDir == "" {
 		return errors.New("output directory is not set")
@@ -92,7 +102,12 @@ func LogOverwrite(dir string, keys []string, res map[string]interface{}) error {
 		return err
 	}
 	defer file.Close()
-	encodedResult, err := json.Marshal(res)
+	var encodedResult []byte
+	if indent {
+		encodedResult, err = json.MarshalIndent(res, "", "  ")
+	} else {
+		encodedResult, err = json.Marshal(res)
+	}
 	if err != nil {
 		return err
 	}
