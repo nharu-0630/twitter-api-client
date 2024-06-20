@@ -18,3 +18,16 @@ func NewRandomUsersCmdPoliticalParty(screenName string) cmd.RandomUsersCmd {
 	}
 	return cmd
 }
+
+func NewRandomUsersCmdHead(screenName string) cmd.RandomUsersCmd {
+	props := cmd.RandomUsersProps{
+		SeedScreenName:      screenName,
+		MaxFollowersRequest: math.MaxInt,
+		MaxChildRequest:     1,
+		MaxUserLimit:        3,
+	}
+	cmd := cmd.RandomUsersCmd{
+		Props: props,
+	}
+	return cmd
+}

@@ -9,6 +9,6 @@ import (
 
 func TestRandomUsers(t *testing.T) {
 	tools.LoadEnv()
-	cmd := example.NewRandomUsersCmdPoliticalParty("jimin_koho")
+	cmd := example.NewRandomUsersCmdHead("nharu_0630")
 	cmd.Execute()
 }

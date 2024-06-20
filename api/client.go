@@ -2,12 +2,12 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
 type ClientConfig struct {
@@ -52,17 +52,18 @@ func NewClient(config ClientConfig) *Client {
 }
 
 func (c *Client) gql(method string, queryID string, operation string, params map[string]interface{}) (map[string]interface{}, error) {
+	zap.L().Debug("GQL request", zap.String("operation", operation))
 	if _, ok := c.rateLimits[operation]; ok {
 		if c.config.IsGuestTokenEnabled {
 			if !c.rateLimits[operation].GuestCall() {
-				log.Default().Println("Rate limit exceeded")
+				zap.L().Debug("Rate limit exceeded", zap.String("operation", operation))
 				c.initializeGuestToken()
 				c.rateLimits[operation].GuestCall()
 			}
 		} else {
 			c.rateLimits[operation].Call()
 		}
-		log.Default().Printf("Rate limit: %d/%d", c.rateLimits[operation].remaining, c.rateLimits[operation].limit)
+		zap.L().Debug("Rate limit", zap.Int("remaining", c.rateLimits[operation].remaining), zap.Int("limit", c.rateLimits[operation].limit))
 	}
 	if method == "POST" {
 		return nil, nil
@@ -131,7 +132,7 @@ func (c *Client) setAuthorizedHeaders(req *http.Request) {
 }
 
 func (c *Client) initializeGuestToken() {
-	log.Default().Println("Initializing guest token")
+	zap.L().Debug("Initializing guest token")
 	req, err := http.NewRequest("POST", "https://api.twitter.com/1.1/guest/activate.json", nil)
 	if err != nil {
 		panic(err)
@@ -157,7 +158,7 @@ func (c *Client) initializeGuestToken() {
 }
 
 func (c *Client) initializeClientUUID() {
-	log.Default().Println("Initializing client UUID")
+	zap.L().Debug("Initializing client UUID")
 	clientUUID, err := uuid.NewRandom()
 	if err != nil {
 		panic(err)

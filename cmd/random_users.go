@@ -4,9 +4,11 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/nharu-0630/twitter-api-client/api"
 	"github.com/nharu-0630/twitter-api-client/tools"
+	"go.uber.org/zap"
 )
 
 type RandomUsersProps struct {
@@ -22,10 +24,13 @@ type RandomUsersCmd struct {
 	GuestClient      *api.Client
 	Client           *api.Client
 	UserIDs          map[string]string
+	TweetIDs         map[string]string
 	LeftChildRequest int
 }
 
 func (cmd *RandomUsersCmd) Execute() {
+	startDateTime := time.Now().Format("2006-01-02 15:04:05")
+
 	cmd.GuestClient = api.NewClient(
 		api.ClientConfig{
 			IsGuestTokenEnabled: true,
@@ -39,6 +44,7 @@ func (cmd *RandomUsersCmd) Execute() {
 		},
 	)
 	cmd.UserIDs = make(map[string]string)
+	cmd.TweetIDs = make(map[string]string)
 	cmd.LeftChildRequest = cmd.Props.MaxChildRequest
 	cmd.Props.CmdName = cmd.Props.SeedScreenName
 
@@ -51,12 +57,24 @@ func (cmd *RandomUsersCmd) Execute() {
 	seedUserID = append(seedUserID, user.RestID)
 	cmd.UserIDs[user.RestID] = "ROOT"
 	cmd.getUserTweetsFromUserID(user.RestID)
-
 	tools.LogOverwrite(cmd.Props.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs})
+
 	cmd.getUsersFromUserIDs(seedUserID)
+
+	zap.L().Info("End of the process", zap.Int("UserCount", len(cmd.UserIDs)), zap.Int("TweetCount", len(cmd.TweetIDs)))
+
+	summary := map[string]interface{}{
+		"Props":         cmd.Props,
+		"UserCount":     len(cmd.UserIDs),
+		"TweetCount":    len(cmd.TweetIDs),
+		"StartDateTime": startDateTime,
+		"EndDateTime":   time.Now().Format("2006-01-02 15:04:05"),
+	}
+	tools.Log(cmd.Props.CmdName, []string{"Summary"}, summary)
 }
 
 func (cmd *RandomUsersCmd) getUsersFromUserIDs(userIDs []string) {
+	zap.L().Info("Get users", zap.Int("UserCount", len(userIDs)))
 	cmd.LeftChildRequest--
 	childUserIDs := []string{}
 	for _, userID := range userIDs {
@@ -99,6 +117,11 @@ func (cmd *RandomUsersCmd) getUserTweetsFromUserID(userID string) {
 	if err != nil {
 		log.Default().Println(err)
 		return
+	}
+	for _, tweet := range tweets {
+		if _, exists := cmd.TweetIDs[tweet.RestID]; !exists {
+			cmd.TweetIDs[tweet.RestID] = userID
+		}
 	}
 	tools.Log(cmd.Props.CmdName, []string{"Tweets", userID}, map[string]interface{}{"Tweets": tweets})
 }
