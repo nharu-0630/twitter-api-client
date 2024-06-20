@@ -9,6 +9,7 @@ func main() {
 	tools.LoadEnv()
 	tools.LoadLogger()
 
-	cmd := example.NewRandomUsersCmdPoliticalParty("jcp_cc")
+	// cmd := example.NewRandomUsersCmdPoliticalParty("jcp_cc")
+	cmd := example.NewGroupUsersCmd()
 	cmd.Execute()
 }

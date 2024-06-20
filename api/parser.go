@@ -69,6 +69,51 @@ func ParseTimelineEntriesTweets(data map[string]interface{}) ([]model.Tweet, mod
 	return tweets, resCursor, nil
 }
 
+func ParseTimelineEntriesTweetsWithInjections(data map[string]interface{}) (model.Tweet, []model.Tweet, model.Cursor, error) {
+	resTweet := model.Tweet{}
+	conversation := make([]model.Tweet, 0)
+	resCursor := model.Cursor{}
+	entries := data["entries"].([]interface{})
+	for _, entry := range entries {
+		content := entry.(map[string]interface{})["content"]
+		entryID := entry.(map[string]interface{})["entryId"].(string)
+		entryType := content.(map[string]interface{})["entryType"]
+		if entryType == "TimelineTimelineItem" || entryType == "TimelineTimelineModule" {
+			if strings.HasPrefix(entryID, "tweet-") {
+				tweetResults := content.(map[string]interface{})["itemContent"].(map[string]interface{})["tweet_results"].(map[string]interface{})
+				if tweetResults["result"] == nil {
+					continue
+				}
+				tweet, err := ParseTweet(tweetResults["result"].(map[string]interface{}))
+				if err != nil {
+					continue
+				}
+				resTweet = tweet
+			}
+			if strings.HasPrefix(entryID, "conversationthread-") {
+				items := content.(map[string]interface{})["items"].([]interface{})
+				for _, item := range items {
+					tweetResults := item.(map[string]interface{})["item"].(map[string]interface{})["itemContent"].(map[string]interface{})["tweet_results"].(map[string]interface{})
+					if tweetResults["result"] == nil {
+						continue
+					}
+					tweet, err := ParseTweet(tweetResults["result"].(map[string]interface{}))
+					if err != nil {
+						continue
+					}
+					conversation = append(conversation, tweet)
+				}
+			}
+			if strings.HasPrefix(entryID, "cursor-top") {
+				resCursor.TopCursor = content.(map[string]interface{})["itemContent"].(map[string]interface{})["value"].(string)
+			} else if strings.HasPrefix(entryID, "cursor-bottom") {
+				resCursor.BottomCursor = content.(map[string]interface{})["itemContent"].(map[string]interface{})["value"].(string)
+			}
+		}
+	}
+	return resTweet, conversation, resCursor, nil
+}
+
 func ParseTimelineEntriesUsers(data map[string]interface{}) ([]model.User, model.Cursor, error) {
 	users := make([]model.User, 0)
 	resCursor := model.Cursor{}

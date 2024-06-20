@@ -2,29 +2,32 @@ package tools
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/joho/godotenv"
 )
 
 func LoadEnv() error {
 	currentDir, err := os.Getwd()
-	envPath := path.Join(currentDir, ".env")
 	if err != nil {
 		return err
 	}
+
 	for {
+		envPath := filepath.Join(currentDir, ".env")
 		if _, err := os.Stat(envPath); err == nil {
+			if err := godotenv.Load(envPath); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		parentDir := filepath.Dir(currentDir)
+		if parentDir == currentDir {
 			break
 		}
-		if currentDir == "/" {
-			break
-		}
-		currentDir = path.Dir(currentDir)
-		envPath = path.Join(currentDir, ".env")
+		currentDir = parentDir
 	}
-	if err := godotenv.Load(envPath); err != nil {
-		return err
-	}
+
 	return nil
 }

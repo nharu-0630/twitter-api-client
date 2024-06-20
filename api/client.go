@@ -43,9 +43,10 @@ func NewClient(config ClientConfig) *Client {
 		client.initializeClientUUID()
 	}
 	client.rateLimits = make(map[string]*RateLimit)
-	client.rateLimits["TweetResultByRestId"] = NewRateLimit(500, 15*time.Minute)
-	client.rateLimits["UserByScreenName"] = NewRateLimit(500, 15*time.Minute)
+	client.rateLimits["TweetResultByRestId"] = NewRateLimit(100, 15*time.Minute)
+	client.rateLimits["UserByScreenName"] = NewRateLimit(100, 15*time.Minute)
 	client.rateLimits["UserTweets"] = NewRateLimit(50, 15*time.Minute)
+	client.rateLimits["TweetDetail"] = NewRateLimit(150, 15*time.Minute)
 	client.rateLimits["Following"] = NewRateLimit(50, 15*time.Minute)
 	client.rateLimits["Followers"] = NewRateLimit(50, 15*time.Minute)
 	return client

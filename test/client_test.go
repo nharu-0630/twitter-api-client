@@ -66,6 +66,24 @@ func TestUserTweetsWithGuest2(t *testing.T) {
 	}
 }
 
+func TestTweetDetail(t *testing.T) {
+	tools.LoadEnv()
+
+	client := api.NewClient(api.ClientConfig{
+		IsGuestTokenEnabled: false,
+		AuthToken:           os.Getenv("AUTH_TOKEN"),
+		CsrfToken:           os.Getenv("CSRF_TOKEN"),
+	})
+
+	tweet, conversation, cursor, err := client.TweetDetail("1750775577437724978")
+	if err != nil {
+		t.Fatal(err)
+	}
+	log.Default().Println(tweet)
+	log.Default().Println(conversation)
+	log.Default().Println(cursor)
+}
+
 func TestFollowing(t *testing.T) {
 	tools.LoadEnv()
 

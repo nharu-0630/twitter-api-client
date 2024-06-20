@@ -140,9 +140,14 @@ type Tweet struct {
 					} `json:"result,omitempty"`
 				} `json:"media_results,omitempty"`
 			} `json:"media,omitempty"`
-			Symbols      []any `json:"symbols,omitempty"`
-			Timestamps   []any `json:"timestamps,omitempty"`
-			Urls         []any `json:"urls,omitempty"`
+			Symbols    []any `json:"symbols,omitempty"`
+			Timestamps []any `json:"timestamps,omitempty"`
+			Urls       []struct {
+				DisplayURL  string `json:"display_url,omitempty"`
+				ExpandedURL string `json:"expanded_url,omitempty"`
+				URL         string `json:"url,omitempty"`
+				Indices     []int  `json:"indices,omitempty"`
+			} `json:"urls,omitempty"`
 			UserMentions []any `json:"user_mentions,omitempty"`
 		} `json:"entities,omitempty"`
 		ExtendedEntities struct {
@@ -221,4 +226,7 @@ type Tweet struct {
 		UserIDStr                 string `json:"user_id_str,omitempty"`
 		IDStr                     string `json:"id_str,omitempty"`
 	} `json:"legacy,omitempty"`
+	QuickPromoteEligibility struct {
+		Eligibility string `json:"eligibility,omitempty"`
+	} `json:"quick_promote_eligibility,omitempty"`
 }
