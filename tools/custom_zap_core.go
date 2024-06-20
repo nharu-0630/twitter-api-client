@@ -79,22 +79,20 @@ func (c *CustomZapCore) Check(ent zapcore.Entry, ce *zapcore.CheckedEntry) *zapc
 }
 
 func (c *CustomZapCore) Write(ent zapcore.Entry, fields []zapcore.Field) error {
-	go func() {
-		buf, err := c.enc.EncodeEntry(ent, fields)
-		if err != nil {
-			return
-		}
-		if c.isAcceptedLevel(ent.Level) {
-			err = c.DiscordHook.Send(ent, fields)
-		}
-		buf.Free()
-		if err != nil {
-			return
-		}
-		if ent.Level > zapcore.ErrorLevel {
-			c.Sync()
-		}
-	}()
+	buf, err := c.enc.EncodeEntry(ent, fields)
+	if err != nil {
+		return err
+	}
+	if c.isAcceptedLevel(ent.Level) {
+		err = c.DiscordHook.Send(ent, fields)
+	}
+	buf.Free()
+	if err != nil {
+		return err
+	}
+	if ent.Level > zapcore.ErrorLevel {
+		c.Sync()
+	}
 	return nil
 }
 

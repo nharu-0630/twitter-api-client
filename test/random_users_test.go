@@ -9,6 +9,7 @@ import (
 
 func TestRandomUsers(t *testing.T) {
 	tools.LoadEnv()
+	tools.LoadLogger()
 	cmd := example.NewRandomUsersCmdHead("nharu_0630")
 	cmd.Execute()
 }

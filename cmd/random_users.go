@@ -17,6 +17,7 @@ type RandomUsersProps struct {
 	MaxFollowersRequest int
 	MaxChildRequest     int
 	MaxUserLimit        int
+	StatusUpdateSec     int
 }
 
 type RandomUsersCmd struct {
@@ -29,7 +30,6 @@ type RandomUsersCmd struct {
 }
 
 func (cmd *RandomUsersCmd) Execute() {
-	startDateTime := time.Now().Format("2006-01-02 15:04:05")
 
 	cmd.GuestClient = api.NewClient(
 		api.ClientConfig{
@@ -46,7 +46,17 @@ func (cmd *RandomUsersCmd) Execute() {
 	cmd.UserIDs = make(map[string]string)
 	cmd.TweetIDs = make(map[string]string)
 	cmd.LeftChildRequest = cmd.Props.MaxChildRequest
-	cmd.Props.CmdName = cmd.Props.SeedScreenName
+	cmd.Props.CmdName = cmd.Props.SeedScreenName + "_" + time.Now().Format("20060102150405")
+
+	startDateTime := time.Now()
+	zap.L().Info("Start of the process", zap.String("CmdName", cmd.Props.CmdName))
+
+	ticker := time.NewTicker(time.Duration(cmd.Props.StatusUpdateSec) * time.Second)
+	go func() {
+		for range ticker.C {
+			cmd.status("Status update")
+		}
+	}()
 
 	seedUserID := []string{}
 	user, err := cmd.GuestClient.UserByScreenName(cmd.Props.SeedScreenName)
@@ -61,20 +71,33 @@ func (cmd *RandomUsersCmd) Execute() {
 
 	cmd.getUsersFromUserIDs(seedUserID)
 
-	zap.L().Info("End of the process", zap.Int("UserCount", len(cmd.UserIDs)), zap.Int("TweetCount", len(cmd.TweetIDs)))
+	defer func() {
+		ticker.Stop()
+	}()
 
 	summary := map[string]interface{}{
-		"Props":         cmd.Props,
-		"UserCount":     len(cmd.UserIDs),
-		"TweetCount":    len(cmd.TweetIDs),
-		"StartDateTime": startDateTime,
-		"EndDateTime":   time.Now().Format("2006-01-02 15:04:05"),
+		"Type":  "RandomUsers",
+		"Props": cmd.Props,
+		"Status": map[string]interface{}{
+			"UserCount":     len(cmd.UserIDs),
+			"TweetCount":    len(cmd.TweetIDs),
+			"StartDateTime": startDateTime,
+			"EndDateTime":   time.Now(),
+			"TotalSec":      time.Since(startDateTime).Seconds(),
+			"SecPerUser":    time.Since(startDateTime).Seconds() / float64(len(cmd.UserIDs)),
+			"SecPerTweet":   time.Since(startDateTime).Seconds() / float64(len(cmd.TweetIDs)),
+		},
 	}
 	tools.Log(cmd.Props.CmdName, []string{"Summary"}, summary)
+	cmd.status("End of the process")
+}
+
+func (cmd *RandomUsersCmd) status(msg string) {
+	zap.L().Info(msg, zap.String("CmdName", cmd.Props.CmdName), zap.Int("UserCount", len(cmd.UserIDs)), zap.Int("TweetCount", len(cmd.TweetIDs)))
 }
 
 func (cmd *RandomUsersCmd) getUsersFromUserIDs(userIDs []string) {
-	zap.L().Info("Get users", zap.Int("UserCount", len(userIDs)))
+	zap.L().Debug("Get users", zap.Int("UserCount", len(userIDs)))
 	cmd.LeftChildRequest--
 	childUserIDs := []string{}
 	for _, userID := range userIDs {
@@ -95,11 +118,11 @@ func (cmd *RandomUsersCmd) getUsersFromUserIDs(userIDs []string) {
 							childUserIDs = append(childUserIDs, follower.RestID)
 						}
 					}
+					tools.LogOverwrite(cmd.Props.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs})
+					if len(cmd.UserIDs) > cmd.Props.MaxUserLimit {
+						return
+					}
 				}
-			}
-			tools.LogOverwrite(cmd.Props.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs})
-			if len(cmd.UserIDs) > cmd.Props.MaxUserLimit {
-				return
 			}
 			if cursor.BottomCursor == "" {
 				break
@@ -113,6 +136,7 @@ func (cmd *RandomUsersCmd) getUsersFromUserIDs(userIDs []string) {
 }
 
 func (cmd *RandomUsersCmd) getUserTweetsFromUserID(userID string) {
+	zap.L().Debug("Get user tweets", zap.String("UserID", userID))
 	tweets, _, err := cmd.GuestClient.UserTweets(userID)
 	if err != nil {
 		log.Default().Println(err)

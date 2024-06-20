@@ -43,7 +43,11 @@ func ParseTimelineEntriesTweets(data map[string]interface{}) ([]model.Tweet, mod
 		entryType := content.(map[string]interface{})["entryType"]
 		if entryType == "TimelineTimelineItem" {
 			if strings.HasPrefix(entryID, "tweet-") {
-				tweet, err := ParseTweet(content.(map[string]interface{})["itemContent"].(map[string]interface{})["tweet_results"].(map[string]interface{})["result"].(map[string]interface{}))
+				tweetResults := content.(map[string]interface{})["itemContent"].(map[string]interface{})["tweet_results"].(map[string]interface{})
+				if tweetResults["result"] == nil {
+					continue
+				}
+				tweet, err := ParseTweet(tweetResults["result"].(map[string]interface{}))
 				if err != nil {
 					continue
 				}
@@ -73,7 +77,11 @@ func ParseTimelineEntriesUsers(data map[string]interface{}) ([]model.User, model
 		content := entry.(map[string]interface{})["content"]
 		entryID := entry.(map[string]interface{})["entryId"].(string)
 		if strings.HasPrefix(entryID, "user-") {
-			user, err := ParseUser(content.(map[string]interface{})["itemContent"].(map[string]interface{})["user_results"].(map[string]interface{})["result"].(map[string]interface{}))
+			userResults := content.(map[string]interface{})["itemContent"].(map[string]interface{})["user_results"].(map[string]interface{})
+			if userResults["result"] == nil {
+				continue
+			}
+			user, err := ParseUser(userResults["result"].(map[string]interface{}))
 			if err != nil {
 				continue
 			}

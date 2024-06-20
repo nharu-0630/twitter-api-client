@@ -10,5 +10,5 @@ import (
 func TestZap(t *testing.T) {
 	tools.LoadEnv()
 	tools.LoadLogger()
-	zap.L().Warn("Get users", zap.String("UserCount", "3"))
+	zap.L().Info("test zap", zap.String("test", "test"))
 }

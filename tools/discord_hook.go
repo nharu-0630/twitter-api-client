@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"go.uber.org/zap/zapcore"
 )
@@ -92,6 +93,18 @@ func (dh *DiscordHook) Send(e zapcore.Entry, fields []zapcore.Field) error {
 					Inline: false,
 				})
 			}
+		case zapcore.Int16Type, zapcore.Int32Type, zapcore.Int64Type:
+			payload.Embeds[0].Fields = append(payload.Embeds[0].Fields, Field{
+				Name:   f.Key,
+				Value:  strconv.FormatInt(f.Integer, 10),
+				Inline: false,
+			})
+		case zapcore.Float32Type, zapcore.Float64Type:
+			payload.Embeds[0].Fields = append(payload.Embeds[0].Fields, Field{
+				Name:   f.Key,
+				Value:  strconv.FormatFloat(float64(f.Integer), 'f', -1, 64),
+				Inline: false,
+			})
 		default:
 			payload.Embeds[0].Fields = append(payload.Embeds[0].Fields, Field{
 				Name:   f.Key,

@@ -8,6 +8,6 @@ import (
 func main() {
 	tools.LoadEnv()
 	tools.LoadLogger()
-	cmd := example.NewRandomUsersCmdPoliticalParty("jcp_cc")
+	cmd := example.NewRandomUsersCmdPoliticalParty("sansei411")
 	cmd.Execute()
 }
