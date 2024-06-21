@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"os"
 	"strconv"
 
 	"go.uber.org/zap/zapcore"
@@ -58,6 +59,10 @@ func NewDiscordHook(hookUrl string) *DiscordHook {
 }
 
 func (dh *DiscordHook) Send(e zapcore.Entry, fields []zapcore.Field) error {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return err
+	}
 	payload := Payload{
 		Username: dh.Username,
 		Embeds: []Embed{
@@ -69,7 +74,7 @@ func (dh *DiscordHook) Send(e zapcore.Entry, fields []zapcore.Field) error {
 				Description: e.Message,
 				Color:       LevelColorMap[e.Level],
 				Footer: Footer{
-					Text: e.Caller.File,
+					Text: hostname,
 				},
 				Timestamp: e.Time.UTC().Format("2006-01-02T15:04:05.999Z"),
 			}},

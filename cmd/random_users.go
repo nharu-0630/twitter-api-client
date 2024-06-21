@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"flag"
 	"log"
+	"math"
 	"os"
 	"strconv"
 	"time"
@@ -20,6 +22,46 @@ type RandomUsersProps struct {
 	MaxUserLimit        int
 	RetryOnGuestFail    bool
 	StatusUpdateSec     int
+}
+
+func RandomUsersCmdFromFlag() RandomUsersCmd {
+	seedScreenName := flag.String("from", "", "シードとなるユーザーのscreen_name (必須)")
+	maxFollowersRequest := flag.Int("req", math.MaxInt, "1ユーザあたりの最大フォロワーリクエスト数 指定しない場合は全てのフォロワーを取得")
+	maxChildRequest := flag.Int("depth", 1, "シードとなるユーザからの最大深度 指定しない場合は1(シードとなるユーザのフォロワーのみ取得)")
+	maxUserLimit := flag.Int("limit", math.MaxInt, "取得するユーザー数の上限 指定しない場合は全てのユーザを取得")
+	retryOnGuestFail := flag.Bool("retry", false, "ゲストトークンでのリクエスト失敗時に認証済みトークンでリトライする")
+	statusUpdateSec := flag.Int("watch", 600, "ステータスを更新する間隔(秒) 指定しない場合は10分ごとに更新")
+	flag.Parse()
+	props := RandomUsersProps{
+		SeedScreenName:      *seedScreenName,
+		MaxFollowersRequest: *maxFollowersRequest,
+		MaxChildRequest:     *maxChildRequest,
+		MaxUserLimit:        *maxUserLimit,
+		RetryOnGuestFail:    *retryOnGuestFail,
+		StatusUpdateSec:     *statusUpdateSec,
+	}
+	cmd := RandomUsersCmd{
+		Props: props,
+	}
+	return cmd
+}
+
+func (props RandomUsersProps) Validate() {
+	if props.SeedScreenName == "" {
+		zap.L().Fatal("Seed screen name is required")
+	}
+	if props.MaxFollowersRequest < 1 {
+		zap.L().Fatal("Max followers request must be greater than 0")
+	}
+	if props.MaxChildRequest < 1 {
+		zap.L().Fatal("Max child request must be greater than 0")
+	}
+	if props.MaxUserLimit < 1 {
+		zap.L().Fatal("Max user limit must be greater than 0")
+	}
+	if props.StatusUpdateSec < 1 {
+		zap.L().Fatal("Status update sec must be greater than 0")
+	}
 }
 
 type RandomUsersCmd struct {
@@ -52,21 +94,7 @@ func (cmd *RandomUsersCmd) Execute() {
 	startDateTime := time.Now()
 	zap.L().Info("Start of the process", zap.String("CmdName", cmd.Props.CmdName), zap.String("SeedScreenName", cmd.Props.SeedScreenName), zap.Int("MaxFollowersRequest", cmd.Props.MaxFollowersRequest), zap.Int("MaxChildRequest", cmd.Props.MaxChildRequest), zap.Int("MaxUserLimit", cmd.Props.MaxUserLimit), zap.Bool("RetryOnGuestFail", cmd.Props.RetryOnGuestFail), zap.Int("StatusUpdateSec", cmd.Props.StatusUpdateSec))
 
-	if cmd.Props.SeedScreenName == "" {
-		zap.L().Fatal("Seed screen name is required")
-	}
-	if cmd.Props.MaxFollowersRequest < 1 {
-		zap.L().Fatal("Max followers request must be greater than 0")
-	}
-	if cmd.Props.MaxChildRequest < 1 {
-		zap.L().Fatal("Max child request must be greater than 0")
-	}
-	if cmd.Props.MaxUserLimit < 1 {
-		zap.L().Fatal("Max user limit must be greater than 0")
-	}
-	if cmd.Props.StatusUpdateSec < 1 {
-		zap.L().Fatal("Status update sec must be greater than 0")
-	}
+	cmd.Props.Validate()
 
 	ticker := time.NewTicker(time.Duration(cmd.Props.StatusUpdateSec) * time.Second)
 	go func() {
