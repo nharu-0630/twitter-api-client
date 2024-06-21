@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"time"
@@ -94,7 +95,10 @@ func (c *Client) gql(method string, queryID string, operation string, params map
 		if err != nil {
 			return nil, err
 		}
-		return resData, nil
+		if _, ok := resData["data"]; !ok {
+			return nil, errors.New("response does not contain data")
+		}
+		return resData["data"].(map[string]interface{}), nil
 	} else {
 		return nil, nil
 	}

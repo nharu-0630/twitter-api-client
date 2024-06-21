@@ -48,7 +48,23 @@ func (cmd *RandomUsersCmd) Execute() {
 	cmd.Props.CmdName = cmd.Props.SeedScreenName + "_" + time.Now().Format("20060102150405")
 
 	startDateTime := time.Now()
-	zap.L().Info("Start of the process", zap.String("CmdName", cmd.Props.CmdName))
+	zap.L().Info("Start of the process", zap.String("CmdName", cmd.Props.CmdName), zap.String("SeedScreenName", cmd.Props.SeedScreenName), zap.Int("MaxFollowersRequest", cmd.Props.MaxFollowersRequest), zap.Int("MaxChildRequest", cmd.Props.MaxChildRequest), zap.Int("MaxUserLimit", cmd.Props.MaxUserLimit), zap.Int("StatusUpdateSec", cmd.Props.StatusUpdateSec))
+
+	if cmd.Props.SeedScreenName == "" {
+		zap.L().Fatal("Seed screen name is required")
+	}
+	if cmd.Props.MaxFollowersRequest < 1 {
+		zap.L().Fatal("Max followers request must be greater than 0")
+	}
+	if cmd.Props.MaxChildRequest < 1 {
+		zap.L().Fatal("Max child request must be greater than 0")
+	}
+	if cmd.Props.MaxUserLimit < 1 {
+		zap.L().Fatal("Max user limit must be greater than 0")
+	}
+	if cmd.Props.StatusUpdateSec < 1 {
+		zap.L().Fatal("Status update sec must be greater than 0")
+	}
 
 	ticker := time.NewTicker(time.Duration(cmd.Props.StatusUpdateSec) * time.Second)
 	go func() {
