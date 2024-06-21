@@ -10,5 +10,6 @@ import (
 func TestZap(t *testing.T) {
 	tools.LoadEnv()
 	tools.LoadLogger()
-	zap.L().Info("test zap", zap.String("test", "test"))
+	// zap.L().Info("test zap", zap.String("test", "test"))
+	zap.L().Info("test zap", zap.Bool("test", true))
 }

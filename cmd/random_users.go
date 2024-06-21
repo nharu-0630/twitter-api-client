@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nharu-0630/twitter-api-client/api"
+	"github.com/nharu-0630/twitter-api-client/model"
 	"github.com/nharu-0630/twitter-api-client/tools"
 	"go.uber.org/zap"
 )
@@ -17,6 +18,7 @@ type RandomUsersProps struct {
 	MaxFollowersRequest int
 	MaxChildRequest     int
 	MaxUserLimit        int
+	RetryOnGuestFail    bool
 	StatusUpdateSec     int
 }
 
@@ -48,7 +50,7 @@ func (cmd *RandomUsersCmd) Execute() {
 	cmd.Props.CmdName = cmd.Props.SeedScreenName + "_" + time.Now().Format("20060102150405")
 
 	startDateTime := time.Now()
-	zap.L().Info("Start of the process", zap.String("CmdName", cmd.Props.CmdName), zap.String("SeedScreenName", cmd.Props.SeedScreenName), zap.Int("MaxFollowersRequest", cmd.Props.MaxFollowersRequest), zap.Int("MaxChildRequest", cmd.Props.MaxChildRequest), zap.Int("MaxUserLimit", cmd.Props.MaxUserLimit), zap.Int("StatusUpdateSec", cmd.Props.StatusUpdateSec))
+	zap.L().Info("Start of the process", zap.String("CmdName", cmd.Props.CmdName), zap.String("SeedScreenName", cmd.Props.SeedScreenName), zap.Int("MaxFollowersRequest", cmd.Props.MaxFollowersRequest), zap.Int("MaxChildRequest", cmd.Props.MaxChildRequest), zap.Int("MaxUserLimit", cmd.Props.MaxUserLimit), zap.Bool("RetryOnGuestFail", cmd.Props.RetryOnGuestFail), zap.Int("StatusUpdateSec", cmd.Props.StatusUpdateSec))
 
 	if cmd.Props.SeedScreenName == "" {
 		zap.L().Fatal("Seed screen name is required")
@@ -129,9 +131,9 @@ func (cmd *RandomUsersCmd) getUsersFromUserIDs(userIDs []string) {
 					cmd.UserIDs[follower.RestID] = userID
 					if !follower.Legacy.Protected {
 						cmd.getUserTweetsFromUserID(follower.RestID)
-						if tools.IsJapaneseUser(follower) {
-							childUserIDs = append(childUserIDs, follower.RestID)
-						}
+						// if tools.IsJapaneseUser(follower) {
+						childUserIDs = append(childUserIDs, follower.RestID)
+						// }
 					}
 					tools.LogOverwrite(cmd.Props.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
 				}
@@ -152,9 +154,21 @@ func (cmd *RandomUsersCmd) getUsersFromUserIDs(userIDs []string) {
 
 func (cmd *RandomUsersCmd) getUserTweetsFromUserID(userID string) {
 	zap.L().Debug("Get user tweets", zap.String("UserID", userID))
+	var tweets []model.Tweet
 	tweets, _, err := cmd.GuestClient.UserTweets(userID)
 	if err != nil {
 		log.Default().Println(err)
+		if err.Error() == "instruction not found" && cmd.Props.RetryOnGuestFail {
+			tweets, _, err = cmd.GuestClient.UserTweets(userID)
+			if err != nil {
+				log.Default().Println(err)
+				return
+			}
+		} else {
+			return
+		}
+	}
+	if len(tweets) == 0 {
 		return
 	}
 	for _, tweet := range tweets {

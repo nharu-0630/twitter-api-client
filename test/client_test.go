@@ -60,8 +60,8 @@ func TestUserTweetsWithGuest2(t *testing.T) {
 		IsGuestTokenEnabled: true,
 	})
 
-	_, _, err := client.UserTweets("1803246236272869376")
-	if err.Error() != "user not found" {
+	_, _, err := client.UserTweets("1679423214500585473")
+	if err.Error() != "instruction not found" {
 		t.Fatal(err)
 	}
 }

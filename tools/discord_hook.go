@@ -105,6 +105,12 @@ func (dh *DiscordHook) Send(e zapcore.Entry, fields []zapcore.Field) error {
 				Value:  strconv.FormatFloat(float64(f.Integer), 'f', -1, 64),
 				Inline: false,
 			})
+		case zapcore.BoolType:
+			payload.Embeds[0].Fields = append(payload.Embeds[0].Fields, Field{
+				Name:   f.Key,
+				Value:  strconv.FormatBool(f.Integer != 0),
+				Inline: false,
+			})
 		default:
 			payload.Embeds[0].Fields = append(payload.Embeds[0].Fields, Field{
 				Name:   f.Key,

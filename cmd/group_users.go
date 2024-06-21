@@ -6,14 +6,16 @@ import (
 	"time"
 
 	"github.com/nharu-0630/twitter-api-client/api"
+	"github.com/nharu-0630/twitter-api-client/model"
 	"github.com/nharu-0630/twitter-api-client/tools"
 	"go.uber.org/zap"
 )
 
 type GroupUsersProps struct {
-	CmdName         string
-	UserIDs         map[string][]string
-	StatusUpdateSec int
+	CmdName          string
+	UserIDs          map[string][]string
+	RetryOnGuestFail bool
+	StatusUpdateSec  int
 }
 
 type GroupUsersCmd struct {
@@ -84,9 +86,21 @@ func (cmd *GroupUsersCmd) status(msg string) {
 
 func (cmd *GroupUsersCmd) getUserTweetsFromUserID(groupName string, userID string) {
 	zap.L().Debug("Get user tweets", zap.String("Group", groupName), zap.String("UserID", userID))
+	var tweets []model.Tweet
 	tweets, _, err := cmd.GuestClient.UserTweets(userID)
 	if err != nil {
 		log.Default().Println(err)
+		if err.Error() == "instruction not found" && cmd.Props.RetryOnGuestFail {
+			tweets, _, err = cmd.GuestClient.UserTweets(userID)
+			if err != nil {
+				log.Default().Println(err)
+				return
+			}
+		} else {
+			return
+		}
+	}
+	if len(tweets) == 0 {
 		return
 	}
 	tweetDetails := map[string]interface{}{}

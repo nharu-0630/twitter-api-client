@@ -22,10 +22,10 @@ func (c *Client) TweetResultByRestId(tweetID string) (model.Tweet, error) {
 		return model.Tweet{}, err
 	}
 	if res["tweetResult"] == nil {
-		return model.Tweet{}, errors.New("tweet not found")
+		return model.Tweet{}, errors.New("tweetResult not found")
 	}
 	if res["tweetResult"].(map[string]interface{})["result"] == nil {
-		return model.Tweet{}, errors.New("tweet not found")
+		return model.Tweet{}, errors.New("result not found")
 	}
 	tweet, err := ParseTweet(res["tweetResult"].(map[string]interface{})["result"].(map[string]interface{}))
 	if err != nil {
@@ -53,7 +53,7 @@ func (c *Client) UserByScreenName(screenName string) (model.User, error) {
 		return model.User{}, errors.New("user not found")
 	}
 	if res["user"].(map[string]interface{})["result"] == nil {
-		return model.User{}, errors.New("user not found")
+		return model.User{}, errors.New("result not found")
 	}
 	user, err := ParseUser(res["user"].(map[string]interface{})["result"].(map[string]interface{}))
 	if err != nil {
@@ -85,23 +85,7 @@ func (c *Client) Likes(userID string, cursor ...string) ([]model.Tweet, model.Cu
 	if err != nil {
 		return nil, model.Cursor{}, err
 	}
-	if res["user"] == nil {
-		return nil, model.Cursor{}, errors.New("user not found")
-	}
-	if res["user"].(map[string]interface{})["result"] == nil {
-		return nil, model.Cursor{}, errors.New("user not found")
-	}
-	if res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline_v2"] == nil {
-		return nil, model.Cursor{}, errors.New("likes not found")
-	}
-	if res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline_v2"].(map[string]interface{})["timeline"] == nil {
-		return nil, model.Cursor{}, errors.New("likes not found")
-	}
-	if res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline_v2"].(map[string]interface{})["timeline"].(map[string]interface{})["instructions"] == nil {
-		return nil, model.Cursor{}, errors.New("likes not found")
-	}
-	instruction := res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline_v2"].(map[string]interface{})["timeline"].(map[string]interface{})["instructions"].([]interface{})[0].(map[string]interface{})
-	return ParseTimelineEntriesTweets(instruction)
+	return ParseTimelineEntriesTweets(res)
 }
 
 func (c *Client) Bookmarks(cursor ...string) ([]model.Tweet, model.Cursor, error) {
@@ -125,23 +109,7 @@ func (c *Client) Bookmarks(cursor ...string) ([]model.Tweet, model.Cursor, error
 	if err != nil {
 		return nil, model.Cursor{}, err
 	}
-	if res["bookmark_timeline_v2"] == nil {
-		return nil, model.Cursor{}, errors.New("bookmarks not found")
-	}
-	if res["bookmark_timeline_v2"].(map[string]interface{})["timeline"] == nil {
-		return nil, model.Cursor{}, errors.New("bookmarks not found")
-	}
-	if res["bookmark_timeline_v2"].(map[string]interface{})["timeline"].(map[string]interface{})["instructions"] == nil {
-		return nil, model.Cursor{}, errors.New("bookmarks not found")
-	}
-	instructions := res["bookmark_timeline_v2"].(map[string]interface{})["timeline"].(map[string]interface{})["instructions"].([]interface{})
-	for _, instruction := range instructions {
-		instructionType := instruction.(map[string]interface{})["type"]
-		if instructionType == "TimelineAddEntries" {
-			return ParseTimelineEntriesTweets(instruction.(map[string]interface{}))
-		}
-	}
-	return nil, model.Cursor{}, err
+	return ParseTimelineEntriesBookmarksTweets(res)
 }
 
 func (c *Client) UserTweets(userID string, cursor ...string) ([]model.Tweet, model.Cursor, error) {
@@ -164,29 +132,7 @@ func (c *Client) UserTweets(userID string, cursor ...string) ([]model.Tweet, mod
 	if err != nil {
 		return nil, model.Cursor{}, err
 	}
-	if res["user"] == nil {
-		return nil, model.Cursor{}, errors.New("user not found")
-	}
-	if res["user"].(map[string]interface{})["result"] == nil {
-		return nil, model.Cursor{}, errors.New("user not found")
-	}
-	if res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline_v2"] == nil {
-		return nil, model.Cursor{}, errors.New("tweets not found")
-	}
-	if res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline_v2"].(map[string]interface{})["timeline"] == nil {
-		return nil, model.Cursor{}, errors.New("tweets not found")
-	}
-	if res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline_v2"].(map[string]interface{})["timeline"].(map[string]interface{})["instructions"] == nil {
-		return nil, model.Cursor{}, errors.New("tweets not found")
-	}
-	instructions := res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline_v2"].(map[string]interface{})["timeline"].(map[string]interface{})["instructions"].([]interface{})
-	for _, instruction := range instructions {
-		instructionType := instruction.(map[string]interface{})["type"]
-		if instructionType == "TimelineAddEntries" {
-			return ParseTimelineEntriesTweets(instruction.(map[string]interface{}))
-		}
-	}
-	return nil, model.Cursor{}, errors.New("no tweets found")
+	return ParseTimelineEntriesTweets(res)
 }
 
 func (c *Client) TweetDetail(focalTweetID string, cursor ...string) (model.Tweet, []model.Tweet, model.Cursor, error) {
@@ -209,20 +155,7 @@ func (c *Client) TweetDetail(focalTweetID string, cursor ...string) (model.Tweet
 	if err != nil {
 		return model.Tweet{}, nil, model.Cursor{}, err
 	}
-	if res["threaded_conversation_with_injections_v2"] == nil {
-		return model.Tweet{}, nil, model.Cursor{}, errors.New("tweet not found")
-	}
-	if res["threaded_conversation_with_injections_v2"].(map[string]interface{})["instructions"] == nil {
-		return model.Tweet{}, nil, model.Cursor{}, errors.New("tweet not found")
-	}
-	instructions := res["threaded_conversation_with_injections_v2"].(map[string]interface{})["instructions"].([]interface{})
-	for _, instruction := range instructions {
-		instructionType := instruction.(map[string]interface{})["type"]
-		if instructionType == "TimelineAddEntries" {
-			return ParseTimelineEntriesTweetsWithInjections(instruction.(map[string]interface{}))
-		}
-	}
-	return model.Tweet{}, nil, model.Cursor{}, errors.New("no tweets found")
+	return ParseTimelineEntriesTweetsWithInjections(res)
 }
 
 func (c *Client) Following(userID string, cursor ...string) ([]model.User, model.Cursor, error) {
@@ -243,23 +176,7 @@ func (c *Client) Following(userID string, cursor ...string) ([]model.User, model
 	if err != nil {
 		return nil, model.Cursor{}, err
 	}
-	if res["user"] == nil {
-		return nil, model.Cursor{}, errors.New("user not found")
-	}
-	if res["user"].(map[string]interface{})["result"] == nil {
-		return nil, model.Cursor{}, errors.New("user not found")
-	}
-	if res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline"] == nil {
-		return nil, model.Cursor{}, errors.New("following not found")
-	}
-	if res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline"].(map[string]interface{})["timeline"] == nil {
-		return nil, model.Cursor{}, errors.New("following not found")
-	}
-	if res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline"].(map[string]interface{})["timeline"].(map[string]interface{})["instructions"] == nil {
-		return nil, model.Cursor{}, errors.New("following not found")
-	}
-	instructions := res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline"].(map[string]interface{})["timeline"].(map[string]interface{})["instructions"].([]interface{})
-	return ParseTimelineEntriesUsers(instructions[len(instructions)-1].(map[string]interface{}))
+	return ParseTimelineEntriesUsers(res)
 }
 
 func (c *Client) Followers(userID string, cursor ...string) ([]model.User, model.Cursor, error) {
@@ -280,21 +197,5 @@ func (c *Client) Followers(userID string, cursor ...string) ([]model.User, model
 	if err != nil {
 		return nil, model.Cursor{}, err
 	}
-	if res["user"] == nil {
-		return nil, model.Cursor{}, errors.New("user not found")
-	}
-	if res["user"].(map[string]interface{})["result"] == nil {
-		return nil, model.Cursor{}, errors.New("user not found")
-	}
-	if res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline"] == nil {
-		return nil, model.Cursor{}, errors.New("followers not found")
-	}
-	if res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline"].(map[string]interface{})["timeline"] == nil {
-		return nil, model.Cursor{}, errors.New("followers not found")
-	}
-	if res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline"].(map[string]interface{})["timeline"].(map[string]interface{})["instructions"] == nil {
-		return nil, model.Cursor{}, errors.New("followers not found")
-	}
-	instructions := res["user"].(map[string]interface{})["result"].(map[string]interface{})["timeline"].(map[string]interface{})["timeline"].(map[string]interface{})["instructions"].([]interface{})
-	return ParseTimelineEntriesUsers(instructions[len(instructions)-1].(map[string]interface{}))
+	return ParseTimelineEntriesUsers(res)
 }
