@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type RandomUsersProps struct {
+type UsersFollowersProps struct {
 	CmdName             string
 	SeedScreenName      string
 	MaxFollowersRequest int
@@ -24,7 +24,7 @@ type RandomUsersProps struct {
 	StatusUpdateSec     int
 }
 
-func RandomUsersCmdFromFlag() RandomUsersCmd {
+func UsersFollowersCmdFromFlag() UsersFollowersCmd {
 	seedScreenName := flag.String("from", "", "シードとなるユーザーのscreen_name (必須)")
 	maxFollowersRequest := flag.Int("req", math.MaxInt, "1ユーザあたりの最大フォロワーリクエスト数 指定しない場合は全てのフォロワーを取得")
 	maxChildRequest := flag.Int("depth", 1, "シードとなるユーザからの最大深度 指定しない場合は1(シードとなるユーザのフォロワーのみ取得)")
@@ -32,7 +32,7 @@ func RandomUsersCmdFromFlag() RandomUsersCmd {
 	retryOnGuestFail := flag.Bool("retry", false, "ゲストトークンでのリクエスト失敗時に認証済みトークンでリトライする")
 	statusUpdateSec := flag.Int("watch", 600, "ステータスを更新する間隔(秒) 指定しない場合は10分ごとに更新")
 	flag.Parse()
-	props := RandomUsersProps{
+	props := UsersFollowersProps{
 		SeedScreenName:      *seedScreenName,
 		MaxFollowersRequest: *maxFollowersRequest,
 		MaxChildRequest:     *maxChildRequest,
@@ -40,13 +40,13 @@ func RandomUsersCmdFromFlag() RandomUsersCmd {
 		RetryOnGuestFail:    *retryOnGuestFail,
 		StatusUpdateSec:     *statusUpdateSec,
 	}
-	cmd := RandomUsersCmd{
+	cmd := UsersFollowersCmd{
 		Props: props,
 	}
 	return cmd
 }
 
-func (props RandomUsersProps) Validate() {
+func (props UsersFollowersProps) Validate() {
 	if props.SeedScreenName == "" {
 		zap.L().Fatal("Seed screen name is required")
 	}
@@ -64,8 +64,8 @@ func (props RandomUsersProps) Validate() {
 	}
 }
 
-type RandomUsersCmd struct {
-	Props            RandomUsersProps
+type UsersFollowersCmd struct {
+	Props            UsersFollowersProps
 	GuestClient      *api.Client
 	Client           *api.Client
 	UserIDs          map[string]string
@@ -73,7 +73,7 @@ type RandomUsersCmd struct {
 	LeftChildRequest int
 }
 
-func (cmd *RandomUsersCmd) Execute() {
+func (cmd *UsersFollowersCmd) Execute() {
 	cmd.GuestClient = api.NewClient(
 		api.ClientConfig{
 			IsGuestTokenEnabled: true,
@@ -121,7 +121,7 @@ func (cmd *RandomUsersCmd) Execute() {
 	}()
 
 	summary := map[string]interface{}{
-		"Type":  "RandomUsers",
+		"Type":  "UsersFollowers",
 		"Props": cmd.Props,
 		"Status": map[string]interface{}{
 			"UserCount":     len(cmd.UserIDs),
@@ -137,11 +137,11 @@ func (cmd *RandomUsersCmd) Execute() {
 	cmd.status("End of the process")
 }
 
-func (cmd *RandomUsersCmd) status(msg string) {
+func (cmd *UsersFollowersCmd) status(msg string) {
 	zap.L().Info(msg, zap.String("CmdName", cmd.Props.CmdName), zap.Int("UserCount", len(cmd.UserIDs)), zap.Int("TweetCount", len(cmd.TweetIDs)))
 }
 
-func (cmd *RandomUsersCmd) getUsersFromUserIDs(userIDs []string) {
+func (cmd *UsersFollowersCmd) getUsersFromUserIDs(userIDs []string) {
 	zap.L().Debug("Get users", zap.Int("UserCount", len(userIDs)))
 	cmd.LeftChildRequest--
 	childUserIDs := []string{}
@@ -180,7 +180,7 @@ func (cmd *RandomUsersCmd) getUsersFromUserIDs(userIDs []string) {
 	}
 }
 
-func (cmd *RandomUsersCmd) getUserTweetsFromUserID(userID string) {
+func (cmd *UsersFollowersCmd) getUserTweetsFromUserID(userID string) {
 	zap.L().Debug("Get user tweets", zap.String("UserID", userID))
 	var tweets []model.Tweet
 	tweets, _, err := cmd.GuestClient.UserTweets(userID)
