@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"log"
 	"os"
 	"time"
 
@@ -89,11 +88,11 @@ func (cmd *GroupUsersCmd) getUserTweetsFromUserID(groupName string, userID strin
 	var tweets []model.Tweet
 	tweets, _, err := cmd.GuestClient.UserTweets(userID)
 	if err != nil {
-		log.Default().Println(err)
+		zap.L().Error(err.Error())
 		if err.Error() == "instruction not found" && cmd.Props.RetryOnGuestFail {
 			tweets, _, err = cmd.GuestClient.UserTweets(userID)
 			if err != nil {
-				log.Default().Println(err)
+				zap.L().Error(err.Error())
 				return
 			}
 		} else {
@@ -110,7 +109,7 @@ func (cmd *GroupUsersCmd) getUserTweetsFromUserID(groupName string, userID strin
 
 			tweet, conversation, _, err := cmd.Client.TweetDetail(tweet.RestID)
 			if err != nil {
-				log.Default().Println(err)
+				zap.L().Error(err.Error())
 				continue
 			}
 			tweetDetails[tweet.RestID] = map[string]interface{}{

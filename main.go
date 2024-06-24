@@ -11,18 +11,22 @@ import (
 func main() {
 	tools.LoadEnv()
 	tools.LoadLogger()
-	// switch cmd with flag
 	cmdType := flag.String("cmd", "", "クライアントコマンドの種類 (必須)")
 	flag.Parse()
 	if *cmdType == "" {
 		zap.L().Fatal("Cmd type is required")
 	}
 	switch *cmdType {
-	case "UsersFollowings":
-		cmd := cmd.UsersFollowingsCmdFromFlag()
+	case "UserFollowers":
+		cmd := cmd.UserFollowersCmdFromFlag()
 		cmd.Execute()
-	case "UsersFollowers":
-		cmd := cmd.UsersFollowersCmdFromFlag()
+	case "UserID":
+		cmd := cmd.UserIDCmdFromFlag()
 		cmd.Execute()
+	case "UserFollowings":
+		cmd := cmd.UserFollowingsCmdFromFlag()
+		cmd.Execute()
+	default:
+		zap.L().Fatal("Cmd type is required")
 	}
 }

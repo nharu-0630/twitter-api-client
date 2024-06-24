@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"flag"
-	"log"
 	"math"
 	"os"
 	"strconv"
@@ -14,8 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type UsersFollowingsProps struct {
-	CmdName              string
+type UserFollowingsProps struct {
 	SeedScreenName       string
 	MaxFollowingsRequest int
 	MaxChildRequest      int
@@ -24,7 +22,17 @@ type UsersFollowingsProps struct {
 	StatusUpdateSec      int
 }
 
-func UsersFollowingsCmdFromFlag() UsersFollowingsCmd {
+type UserFollowingsCmd struct {
+	CmdName          string
+	Props            UserFollowingsProps
+	GuestClient      *api.Client
+	Client           *api.Client
+	UserIDs          map[string]string
+	TweetIDs         map[string]string
+	LeftChildRequest int
+}
+
+func UserFollowingsCmdFromFlag() UserFollowingsCmd {
 	seedScreenName := flag.String("from", "", "シードとなるユーザーのscreen_name (必須)")
 	maxFollowingsRequest := flag.Int("req", math.MaxInt, "1ユーザあたりの最大フォローリクエスト数 指定しない場合は全てのフォロワーを取得")
 	maxChildRequest := flag.Int("depth", 1, "シードとなるユーザからの最大深度 指定しない場合は1(シードとなるユーザのフォロワーのみ取得)")
@@ -32,7 +40,7 @@ func UsersFollowingsCmdFromFlag() UsersFollowingsCmd {
 	retryOnGuestFail := flag.Bool("retry", false, "ゲストトークンでのリクエスト失敗時に認証済みトークンでリトライする")
 	statusUpdateSec := flag.Int("watch", 600, "ステータスを更新する間隔(秒) 指定しない場合は10分ごとに更新")
 	flag.Parse()
-	props := UsersFollowingsProps{
+	props := UserFollowingsProps{
 		SeedScreenName:       *seedScreenName,
 		MaxFollowingsRequest: *maxFollowingsRequest,
 		MaxChildRequest:      *maxChildRequest,
@@ -40,13 +48,13 @@ func UsersFollowingsCmdFromFlag() UsersFollowingsCmd {
 		RetryOnGuestFail:     *retryOnGuestFail,
 		StatusUpdateSec:      *statusUpdateSec,
 	}
-	cmd := UsersFollowingsCmd{
+	cmd := UserFollowingsCmd{
 		Props: props,
 	}
 	return cmd
 }
 
-func (props UsersFollowingsProps) Validate() {
+func (props UserFollowingsProps) Validate() {
 	if props.SeedScreenName == "" {
 		zap.L().Fatal("Seed screen name is required")
 	}
@@ -64,16 +72,7 @@ func (props UsersFollowingsProps) Validate() {
 	}
 }
 
-type UsersFollowingsCmd struct {
-	Props            UsersFollowingsProps
-	GuestClient      *api.Client
-	Client           *api.Client
-	UserIDs          map[string]string
-	TweetIDs         map[string]string
-	LeftChildRequest int
-}
-
-func (cmd *UsersFollowingsCmd) Execute() {
+func (cmd *UserFollowingsCmd) Execute() {
 	cmd.GuestClient = api.NewClient(
 		api.ClientConfig{
 			IsGuestTokenEnabled: true,
@@ -89,10 +88,10 @@ func (cmd *UsersFollowingsCmd) Execute() {
 	cmd.UserIDs = make(map[string]string)
 	cmd.TweetIDs = make(map[string]string)
 	cmd.LeftChildRequest = cmd.Props.MaxChildRequest
-	cmd.Props.CmdName = cmd.Props.SeedScreenName + "_" + time.Now().Format("20060102150405")
+	cmd.CmdName = cmd.Props.SeedScreenName + "_" + time.Now().Format("20060102150405")
 
 	startDateTime := time.Now()
-	zap.L().Info("Start of the process", zap.String("CmdName", cmd.Props.CmdName), zap.String("SeedScreenName", cmd.Props.SeedScreenName), zap.Int("MaxFollowingsRequest", cmd.Props.MaxFollowingsRequest), zap.Int("MaxChildRequest", cmd.Props.MaxChildRequest), zap.Int("MaxUserLimit", cmd.Props.MaxUserLimit), zap.Bool("RetryOnGuestFail", cmd.Props.RetryOnGuestFail), zap.Int("StatusUpdateSec", cmd.Props.StatusUpdateSec))
+	zap.L().Info("Start of the process", zap.String("CmdName", cmd.CmdName), zap.String("SeedScreenName", cmd.Props.SeedScreenName), zap.Int("MaxFollowingsRequest", cmd.Props.MaxFollowingsRequest), zap.Int("MaxChildRequest", cmd.Props.MaxChildRequest), zap.Int("MaxUserLimit", cmd.Props.MaxUserLimit), zap.Bool("RetryOnGuestFail", cmd.Props.RetryOnGuestFail), zap.Int("StatusUpdateSec", cmd.Props.StatusUpdateSec))
 
 	cmd.Props.Validate()
 
@@ -106,13 +105,13 @@ func (cmd *UsersFollowingsCmd) Execute() {
 	seedUserID := []string{}
 	user, err := cmd.GuestClient.UserByScreenName(cmd.Props.SeedScreenName)
 	if err != nil {
-		log.Fatal(err)
+		zap.L().Fatal(err.Error())
 	}
-	tools.Log(cmd.Props.CmdName, []string{"User", user.RestID}, map[string]interface{}{"User": user}, false)
+	tools.Log(cmd.CmdName, []string{"User", user.RestID}, map[string]interface{}{"User": user}, false)
 	seedUserID = append(seedUserID, user.RestID)
 	cmd.UserIDs[user.RestID] = "ROOT"
 	cmd.getUserTweetsFromUserID(user.RestID)
-	tools.LogOverwrite(cmd.Props.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
+	tools.LogOverwrite(cmd.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
 
 	cmd.getUsersFromUserIDs(seedUserID)
 
@@ -121,7 +120,7 @@ func (cmd *UsersFollowingsCmd) Execute() {
 	}()
 
 	summary := map[string]interface{}{
-		"Type":  "UsersFollowings",
+		"Type":  "UserFollowings",
 		"Props": cmd.Props,
 		"Status": map[string]interface{}{
 			"UserCount":     len(cmd.UserIDs),
@@ -133,16 +132,15 @@ func (cmd *UsersFollowingsCmd) Execute() {
 			"SecPerTweet":   time.Since(startDateTime).Seconds() / float64(len(cmd.TweetIDs)),
 		},
 	}
-	tools.Log(cmd.Props.CmdName, []string{"Summary"}, summary, true)
+	tools.Log(cmd.CmdName, []string{"Summary"}, summary, true)
 	cmd.status("End of the process")
 }
 
-func (cmd *UsersFollowingsCmd) status(msg string) {
-	zap.L().Info(msg, zap.String("CmdName", cmd.Props.CmdName), zap.Int("UserCount", len(cmd.UserIDs)), zap.Int("TweetCount", len(cmd.TweetIDs)))
+func (cmd *UserFollowingsCmd) status(msg string) {
+	zap.L().Info(msg, zap.String("CmdName", cmd.CmdName), zap.Int("UserCount", len(cmd.UserIDs)), zap.Int("TweetCount", len(cmd.TweetIDs)))
 }
 
-func (cmd *UsersFollowingsCmd) getUsersFromUserIDs(userIDs []string) {
-	zap.L().Debug("Get users", zap.Int("UserCount", len(userIDs)))
+func (cmd *UserFollowingsCmd) getUsersFromUserIDs(userIDs []string) {
 	cmd.LeftChildRequest--
 	childUserIDs := []string{}
 	for _, userID := range userIDs {
@@ -150,10 +148,10 @@ func (cmd *UsersFollowingsCmd) getUsersFromUserIDs(userIDs []string) {
 		for i := 0; i < cmd.Props.MaxFollowingsRequest; i++ {
 			Followings, cursor, err := cmd.Client.Following(userID, bottomCursor)
 			if err != nil {
-				log.Default().Println(err)
+				zap.L().Error(err.Error())
 				break
 			}
-			tools.Log(cmd.Props.CmdName, []string{"Followings", userID, strconv.Itoa(i)}, map[string]interface{}{"Followings": Followings}, false)
+			tools.Log(cmd.CmdName, []string{"Followings", userID, strconv.Itoa(i)}, map[string]interface{}{"Followings": Followings}, false)
 			for _, follower := range Followings {
 				if _, exists := cmd.UserIDs[follower.RestID]; !exists {
 					cmd.UserIDs[follower.RestID] = userID
@@ -163,7 +161,7 @@ func (cmd *UsersFollowingsCmd) getUsersFromUserIDs(userIDs []string) {
 						childUserIDs = append(childUserIDs, follower.RestID)
 						// }
 					}
-					tools.LogOverwrite(cmd.Props.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
+					tools.LogOverwrite(cmd.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
 				}
 			}
 			if len(cmd.UserIDs) > cmd.Props.MaxUserLimit {
@@ -180,16 +178,15 @@ func (cmd *UsersFollowingsCmd) getUsersFromUserIDs(userIDs []string) {
 	}
 }
 
-func (cmd *UsersFollowingsCmd) getUserTweetsFromUserID(userID string) {
-	zap.L().Debug("Get user tweets", zap.String("UserID", userID))
+func (cmd *UserFollowingsCmd) getUserTweetsFromUserID(userID string) {
 	var tweets []model.Tweet
 	tweets, _, err := cmd.GuestClient.UserTweets(userID)
 	if err != nil {
-		log.Default().Println(err)
+		zap.L().Error(err.Error())
 		if err.Error() == "instruction not found" && cmd.Props.RetryOnGuestFail {
 			tweets, _, err = cmd.GuestClient.UserTweets(userID)
 			if err != nil {
-				log.Default().Println(err)
+				zap.L().Error(err.Error())
 				return
 			}
 		} else {
@@ -204,5 +201,5 @@ func (cmd *UsersFollowingsCmd) getUserTweetsFromUserID(userID string) {
 			cmd.TweetIDs[tweet.RestID] = userID
 		}
 	}
-	tools.Log(cmd.Props.CmdName, []string{"Tweets", userID}, map[string]interface{}{"Tweets": tweets}, false)
+	tools.Log(cmd.CmdName, []string{"Tweets", userID}, map[string]interface{}{"Tweets": tweets}, false)
 }
