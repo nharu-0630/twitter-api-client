@@ -10,7 +10,7 @@ import (
 
 func main() {
 	tools.LoadEnv()
-	tools.LoadLogger()
+	tools.SetZapGlobals()
 	cmdType := flag.String("cmd", "", "クライアントコマンドの種類 (必須)")
 	flag.Parse()
 	if *cmdType == "" {

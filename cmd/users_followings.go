@@ -167,7 +167,7 @@ func (cmd *UserFollowingsCmd) getUsersFromUserIDs(userIDs []string) {
 			if len(cmd.UserIDs) > cmd.Props.MaxUserLimit {
 				return
 			}
-			if cursor.BottomCursor == "" {
+			if cursor.IsAfterLast {
 				break
 			}
 			bottomCursor = cursor.BottomCursor

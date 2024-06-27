@@ -83,7 +83,7 @@ func (cmd *UserIDCmd) Execute() {
 			zap.L().Fatal(err.Error())
 		}
 		tools.Log(cmd.CmdName, []string{"Tweet", cmd.Props.UserID, strconv.Itoa(i)}, map[string]interface{}{"Tweets": tweets}, false)
-		if cursor.BottomCursor == "" || (cursor.BottomCursor != "" && len(tweets) == 0) {
+		if cursor.IsAfterLast {
 			break
 		}
 		bottomCursor = cursor.BottomCursor

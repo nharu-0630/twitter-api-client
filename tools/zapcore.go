@@ -23,7 +23,7 @@ type NewCustomZapCoreParams struct {
 	DiscordHook  *DiscordHook
 }
 
-func LoadLogger() {
+func SetZapGlobals() {
 	core, err := NewCustomZapCore(&NewCustomZapCoreParams{
 		Level:        zap.InfoLevel,
 		Enc:          zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),

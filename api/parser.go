@@ -95,6 +95,7 @@ func ParseTimelineEntriesTweets(res map[string]interface{}) ([]model.Tweet, mode
 			}
 		}
 	}
+	resCursor.IsAfterLast = len(tweets) == 0 || resCursor.BottomCursor == ""
 	return tweets, resCursor, nil
 }
 
@@ -153,6 +154,7 @@ func ParseTimelineEntriesBookmarksTweets(res map[string]interface{}) ([]model.Tw
 			}
 		}
 	}
+	resCursor.IsAfterLast = len(tweets) == 0 || resCursor.BottomCursor == ""
 	return tweets, resCursor, nil
 }
 
@@ -221,6 +223,7 @@ func ParseTimelineEntriesTweetsWithInjections(res map[string]interface{}) (model
 			}
 		}
 	}
+	resCursor.IsAfterLast = len(conversation) == 0 || resCursor.BottomCursor == ""
 	return resTweet, conversation, resCursor, nil
 }
 
@@ -266,5 +269,6 @@ func ParseTimelineEntriesUsers(res map[string]interface{}) ([]model.User, model.
 			resCursor.BottomCursor = content.(map[string]interface{})["value"].(string)
 		}
 	}
+	resCursor.IsAfterLast = len(users) == 0 || resCursor.BottomCursor == ""
 	return users, resCursor, nil
 }
