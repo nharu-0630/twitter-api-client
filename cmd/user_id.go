@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"flag"
-	"math"
 	"os"
 	"strconv"
 	"time"
@@ -13,9 +11,9 @@ import (
 )
 
 type UserIDProps struct {
-	UserID               string
-	MaxUserTweetsRequest int
-	StatusUpdateSec      int
+	UserID               string `yaml:"UserID"`
+	MaxUserTweetsRequest int    `yaml:"MaxUserTweetsRequest"`
+	StatusUpdateSec      int    `yaml:"StatusUpdateSec"`
 }
 
 type UserIDCmd struct {
@@ -23,22 +21,6 @@ type UserIDCmd struct {
 	Props    UserIDProps
 	Client   *api.Client
 	TweetIDs map[string]string
-}
-
-func UserIDCmdFromFlag() UserIDCmd {
-	userID := flag.String("from", "", "対象となるユーザのuser_id (必須)")
-	maxUserTweetsRequest := flag.Int("req", math.MaxInt, "最大ユーザツイートリクエスト数 指定しない場合は全てのツイートを取得")
-	statusUpdateSec := flag.Int("watch", 600, "ステータスを更新する間隔(秒) 指定しない場合は10分ごとに更新")
-	flag.Parse()
-	props := UserIDProps{
-		UserID:               *userID,
-		MaxUserTweetsRequest: *maxUserTweetsRequest,
-		StatusUpdateSec:      *statusUpdateSec,
-	}
-	cmd := UserIDCmd{
-		Props: props,
-	}
-	return cmd
 }
 
 func (props UserIDProps) Validate() {

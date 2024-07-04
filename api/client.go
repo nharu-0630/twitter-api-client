@@ -25,13 +25,6 @@ type Client struct {
 	rateLimits map[string]*RateLimit
 }
 
-type RateLimit struct {
-	limit     int
-	remaining int
-	interval  time.Duration
-	reset     time.Time
-}
-
 func NewClient(config ClientConfig) *Client {
 	client := &Client{config: config,
 		client: &http.Client{
@@ -44,12 +37,6 @@ func NewClient(config ClientConfig) *Client {
 		client.initializeClientUUID()
 	}
 	client.rateLimits = make(map[string]*RateLimit)
-	client.rateLimits["TweetResultByRestId"] = NewRateLimit(100, 15*time.Minute)
-	client.rateLimits["UserByScreenName"] = NewRateLimit(100, 15*time.Minute)
-	client.rateLimits["UserTweets"] = NewRateLimit(50, 15*time.Minute)
-	client.rateLimits["TweetDetail"] = NewRateLimit(150, 15*time.Minute)
-	client.rateLimits["Following"] = NewRateLimit(50, 15*time.Minute)
-	client.rateLimits["Followers"] = NewRateLimit(50, 15*time.Minute)
 	return client
 }
 
@@ -57,15 +44,13 @@ func (c *Client) gql(method string, queryID string, operation string, params map
 	zap.L().Debug("GQL request", zap.String("operation", operation))
 	if _, ok := c.rateLimits[operation]; ok {
 		if c.config.IsGuestTokenEnabled {
-			if !c.rateLimits[operation].GuestCall() {
+			if c.rateLimits[operation].remaining == 0 {
 				zap.L().Debug("Rate limit exceeded", zap.String("operation", operation))
 				c.initializeGuestToken()
-				c.rateLimits[operation].GuestCall()
 			}
 		} else {
-			c.rateLimits[operation].Call()
+			c.rateLimits[operation].Wait()
 		}
-		zap.L().Debug("Rate limit", zap.Int("remaining", c.rateLimits[operation].remaining), zap.Int("limit", c.rateLimits[operation].limit))
 	}
 	if method == "POST" {
 		return nil, nil
@@ -90,6 +75,11 @@ func (c *Client) gql(method string, queryID string, operation string, params map
 			return nil, err
 		}
 		defer res.Body.Close()
+		if _, ok := c.rateLimits[operation]; !ok {
+			c.rateLimits[operation] = &RateLimit{}
+		}
+		c.rateLimits[operation].Update(res.Header)
+		zap.L().Debug("Rate limit", zap.Int("limit", c.rateLimits[operation].limit), zap.Int("remaining", c.rateLimits[operation].remaining), zap.Int("reset", c.rateLimits[operation].reset))
 		var resData map[string]interface{}
 		err = json.NewDecoder(res.Body).Decode(&resData)
 		if err != nil {
@@ -157,9 +147,7 @@ func (c *Client) initializeGuestToken() {
 		panic(err)
 	}
 	c.guestToken = resData["guest_token"].(string)
-	for _, value := range c.rateLimits {
-		value.Reset()
-	}
+	c.rateLimits = make(map[string]*RateLimit)
 }
 
 func (c *Client) initializeClientUUID() {

@@ -1,0 +1,7 @@
+CmdType: UserID
+# 対象となるユーザのuser_id (必須)
+UserID: 783214
+# 最大ユーザツイートリクエスト数 指定しない場合は全てのツイートを取得
+MaxUserTweetsRequest: 9223372036854775807
+# ステータスを更新する間隔(秒) 指定しない場合は10分ごとに更新
+StatusUpdateSec: 600

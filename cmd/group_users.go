@@ -11,10 +11,10 @@ import (
 )
 
 type GroupUsersProps struct {
-	CmdName          string
-	UserIDs          map[string][]string
-	RetryOnGuestFail bool
-	StatusUpdateSec  int
+	CmdName          string              `yaml:"CmdName"`
+	UserIDs          map[string][]string `yaml:"UserIDs"`
+	RetryOnGuestFail bool                `yaml:"RetryOnGuestFail"`
+	StatusUpdateSec  int                 `yaml:"StatusUpdateSec"`
 }
 
 type GroupUsersCmd struct {

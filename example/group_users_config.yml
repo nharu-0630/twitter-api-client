@@ -1,0 +1,15 @@
+CmdType: GroupUsers
+# グループごとのユーザのscreen_name (必須)
+UserIDs:
+  NotConspiracy:
+    - 44196397
+    - 137857547
+    - 380749300
+  Conspiracy:
+    - 816343816030404608
+    - 119603478
+    - 797003573422788610
+# ゲストトークンでのリクエスト失敗時に認証済みトークンでリトライする
+RetryOnGuestFail: false
+# ステータスを更新する間隔(秒) 指定しない場合は10分ごとに更新
+StatusUpdateSec: 600
