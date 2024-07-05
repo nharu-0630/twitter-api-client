@@ -119,19 +119,19 @@ func (cmd *GroupUsersCmd) getUserTweetsFromUserID(groupName string, userID strin
 	}
 	tweetDetails := map[string]interface{}{}
 	for _, tweet := range tweets {
-		if _, exists := cmd.TweetIDs[tweet.RestID]; !exists {
-			cmd.TweetIDs[tweet.RestID] = groupName + "_" + userID
+		tweetDetails[tweet.RestID] = map[string]interface{}{
+			"Tweet": tweet,
+		}
+		restID := tweet.RestID
+		if _, exists := cmd.TweetIDs[restID]; !exists {
+			cmd.TweetIDs[restID] = groupName + "_" + userID
 			bottomCursor := ""
-			var tweet model.Tweet
 			var conversation []model.Tweet
 			for i := 0; i < cmd.Props.MaxConversationRequest; i++ {
-				resTweet, resConversation, cursor, err := cmd.Client.TweetDetail(tweet.RestID, bottomCursor)
+				_, resConversation, cursor, err := cmd.Client.TweetDetail(restID, bottomCursor)
 				if err != nil {
 					zap.L().Error(err.Error())
 					break
-				}
-				if tweet.RestID == "" {
-					tweet = resTweet
 				}
 				conversation = append(conversation, resConversation...)
 				if cursor.IsAfterLast {
@@ -139,10 +139,7 @@ func (cmd *GroupUsersCmd) getUserTweetsFromUserID(groupName string, userID strin
 				}
 				bottomCursor = cursor.BottomCursor
 			}
-			tweetDetails[tweet.RestID] = map[string]interface{}{
-				"Tweet":        tweet,
-				"Conversation": conversation,
-			}
+			tweetDetails[tweet.RestID].(map[string]interface{})["Conversation"] = conversation
 		}
 	}
 	tools.Log(cmd.CmdName, []string{"Tweets", groupName, userID}, tweetDetails, false)
