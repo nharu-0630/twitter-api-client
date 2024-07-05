@@ -11,13 +11,26 @@ import (
 )
 
 type GroupUsersProps struct {
-	CmdName          string              `yaml:"CmdName"`
-	UserIDs          map[string][]string `yaml:"UserIDs"`
-	RetryOnGuestFail bool                `yaml:"RetryOnGuestFail"`
-	StatusUpdateSec  int                 `yaml:"StatusUpdateSec"`
+	UserIDs                map[string][]string `yaml:"UserIDs"`
+	MaxConversationRequest int                 `yaml:"MaxConversationRequest"`
+	RetryOnGuestFail       bool                `yaml:"RetryOnGuestFail"`
+	StatusUpdateSec        int                 `yaml:"StatusUpdateSec"`
+}
+
+func (props GroupUsersProps) Validate() {
+	if props.UserIDs == nil {
+		zap.L().Fatal("User ids are required")
+	}
+	if props.MaxConversationRequest < 1 {
+		zap.L().Fatal("Max conversation request must be greater than 0")
+	}
+	if props.StatusUpdateSec < 1 {
+		zap.L().Fatal("Status update sec must be greater than 0")
+	}
 }
 
 type GroupUsersCmd struct {
+	CmdName     string `yaml:"CmdName"`
 	Props       GroupUsersProps
 	GuestClient *api.Client
 	Client      *api.Client
@@ -38,14 +51,16 @@ func (cmd *GroupUsersCmd) Execute() {
 		},
 	)
 	cmd.TweetIDs = make(map[string]string)
-	cmd.Props.CmdName = ""
+	cmd.CmdName = ""
 	for groupName := range cmd.Props.UserIDs {
-		cmd.Props.CmdName += groupName + "_"
+		cmd.CmdName += groupName + "_"
 	}
-	cmd.Props.CmdName += time.Now().Format("20060102150405")
+	cmd.CmdName += time.Now().Format("20060102150405")
 
 	startDateTime := time.Now()
-	zap.L().Info("Start of the process", zap.String("CmdName", cmd.Props.CmdName))
+	zap.L().Info("Start of the process", zap.String("CmdName", cmd.CmdName))
+
+	cmd.Props.Validate()
 
 	ticker := time.NewTicker(time.Duration(cmd.Props.StatusUpdateSec) * time.Second)
 	go func() {
@@ -75,12 +90,12 @@ func (cmd *GroupUsersCmd) Execute() {
 			"SecPerTweet":   time.Since(startDateTime).Seconds() / float64(len(cmd.TweetIDs)),
 		},
 	}
-	tools.Log(cmd.Props.CmdName, []string{"Summary"}, summary, true)
+	tools.Log(cmd.CmdName, []string{"Summary"}, summary, true)
 	cmd.status("End of the process")
 }
 
 func (cmd *GroupUsersCmd) status(msg string) {
-	zap.L().Info(msg, zap.String("CmdName", cmd.Props.CmdName), zap.Int("TweetCount", len(cmd.TweetIDs)))
+	zap.L().Info(msg, zap.String("CmdName", cmd.CmdName), zap.Int("TweetCount", len(cmd.TweetIDs)))
 }
 
 func (cmd *GroupUsersCmd) getUserTweetsFromUserID(groupName string, userID string) {
@@ -106,11 +121,23 @@ func (cmd *GroupUsersCmd) getUserTweetsFromUserID(groupName string, userID strin
 	for _, tweet := range tweets {
 		if _, exists := cmd.TweetIDs[tweet.RestID]; !exists {
 			cmd.TweetIDs[tweet.RestID] = groupName + "_" + userID
-
-			tweet, conversation, _, err := cmd.Client.TweetDetail(tweet.RestID)
-			if err != nil {
-				zap.L().Error(err.Error())
-				continue
+			bottomCursor := ""
+			var tweet model.Tweet
+			var conversation []model.Tweet
+			for i := 0; i < cmd.Props.MaxConversationRequest; i++ {
+				resTweet, resConversation, cursor, err := cmd.Client.TweetDetail(tweet.RestID, bottomCursor)
+				if err != nil {
+					zap.L().Error(err.Error())
+					break
+				}
+				if tweet.RestID == "" {
+					tweet = resTweet
+				}
+				conversation = append(conversation, resConversation...)
+				if cursor.IsAfterLast {
+					break
+				}
+				bottomCursor = cursor.BottomCursor
 			}
 			tweetDetails[tweet.RestID] = map[string]interface{}{
 				"Tweet":        tweet,
@@ -118,5 +145,5 @@ func (cmd *GroupUsersCmd) getUserTweetsFromUserID(groupName string, userID strin
 			}
 		}
 	}
-	tools.Log(cmd.Props.CmdName, []string{"Tweets", groupName, userID}, tweetDetails, false)
+	tools.Log(cmd.CmdName, []string{"Tweets", groupName, userID}, tweetDetails, false)
 }

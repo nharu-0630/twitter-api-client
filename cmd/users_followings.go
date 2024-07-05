@@ -20,16 +20,6 @@ type UserFollowingsProps struct {
 	StatusUpdateSec      int    `yaml:"StatusUpdateSec"`
 }
 
-type UserFollowingsCmd struct {
-	CmdName          string
-	Props            UserFollowingsProps
-	GuestClient      *api.Client
-	Client           *api.Client
-	UserIDs          map[string]string
-	TweetIDs         map[string]string
-	LeftChildRequest int
-}
-
 func (props UserFollowingsProps) Validate() {
 	if props.SeedScreenName == "" {
 		zap.L().Fatal("Seed screen name is required")
@@ -46,6 +36,16 @@ func (props UserFollowingsProps) Validate() {
 	if props.StatusUpdateSec < 1 {
 		zap.L().Fatal("Status update sec must be greater than 0")
 	}
+}
+
+type UserFollowingsCmd struct {
+	CmdName          string
+	Props            UserFollowingsProps
+	GuestClient      *api.Client
+	Client           *api.Client
+	UserIDs          map[string]string
+	TweetIDs         map[string]string
+	LeftChildRequest int
 }
 
 func (cmd *UserFollowingsCmd) Execute() {
@@ -67,7 +67,7 @@ func (cmd *UserFollowingsCmd) Execute() {
 	cmd.CmdName = cmd.Props.SeedScreenName + "_" + time.Now().Format("20060102150405")
 
 	startDateTime := time.Now()
-	zap.L().Info("Start of the process", zap.String("CmdName", cmd.CmdName), zap.String("SeedScreenName", cmd.Props.SeedScreenName), zap.Int("MaxFollowingsRequest", cmd.Props.MaxFollowingsRequest), zap.Int("MaxChildRequest", cmd.Props.MaxChildRequest), zap.Int("MaxUserLimit", cmd.Props.MaxUserLimit), zap.Bool("RetryOnGuestFail", cmd.Props.RetryOnGuestFail), zap.Int("StatusUpdateSec", cmd.Props.StatusUpdateSec))
+	zap.L().Info("Start of the process", zap.String("CmdName", cmd.CmdName))
 
 	cmd.Props.Validate()
 
@@ -122,20 +122,18 @@ func (cmd *UserFollowingsCmd) getUsersFromUserIDs(userIDs []string) {
 	for _, userID := range userIDs {
 		bottomCursor := ""
 		for i := 0; i < cmd.Props.MaxFollowingsRequest; i++ {
-			Followings, cursor, err := cmd.Client.Following(userID, bottomCursor)
+			followings, cursor, err := cmd.Client.Following(userID, bottomCursor)
 			if err != nil {
 				zap.L().Error(err.Error())
 				break
 			}
-			tools.Log(cmd.CmdName, []string{"Followings", userID, strconv.Itoa(i)}, map[string]interface{}{"Followings": Followings}, false)
-			for _, follower := range Followings {
+			tools.Log(cmd.CmdName, []string{"Followings", userID, strconv.Itoa(i)}, map[string]interface{}{"Followings": followings}, false)
+			for _, follower := range followings {
 				if _, exists := cmd.UserIDs[follower.RestID]; !exists {
 					cmd.UserIDs[follower.RestID] = userID
 					if !follower.Legacy.Protected {
 						cmd.getUserTweetsFromUserID(follower.RestID)
-						// if tools.IsJapaneseUser(follower) {
 						childUserIDs = append(childUserIDs, follower.RestID)
-						// }
 					}
 					tools.LogOverwrite(cmd.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
 				}

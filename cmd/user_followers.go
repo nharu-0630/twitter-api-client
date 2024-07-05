@@ -20,16 +20,6 @@ type UserFollowersProps struct {
 	StatusUpdateSec     int    `yaml:"StatusUpdateSec"`
 }
 
-type UserFollowersCmd struct {
-	CmdName          string
-	Props            UserFollowersProps
-	GuestClient      *api.Client
-	Client           *api.Client
-	UserIDs          map[string]string
-	TweetIDs         map[string]string
-	LeftChildRequest int
-}
-
 func (props UserFollowersProps) Validate() {
 	if props.SeedScreenName == "" {
 		zap.L().Fatal("Seed screen name is required")
@@ -46,6 +36,16 @@ func (props UserFollowersProps) Validate() {
 	if props.StatusUpdateSec < 1 {
 		zap.L().Fatal("Status update sec must be greater than 0")
 	}
+}
+
+type UserFollowersCmd struct {
+	CmdName          string
+	Props            UserFollowersProps
+	GuestClient      *api.Client
+	Client           *api.Client
+	UserIDs          map[string]string
+	TweetIDs         map[string]string
+	LeftChildRequest int
 }
 
 func (cmd *UserFollowersCmd) Execute() {
@@ -67,7 +67,7 @@ func (cmd *UserFollowersCmd) Execute() {
 	cmd.CmdName = cmd.Props.SeedScreenName + "_" + time.Now().Format("20060102150405")
 
 	startDateTime := time.Now()
-	zap.L().Info("Start of the process", zap.String("CmdName", cmd.CmdName), zap.String("SeedScreenName", cmd.Props.SeedScreenName), zap.Int("MaxFollowersRequest", cmd.Props.MaxFollowersRequest), zap.Int("MaxChildRequest", cmd.Props.MaxChildRequest), zap.Int("MaxUserLimit", cmd.Props.MaxUserLimit), zap.Bool("RetryOnGuestFail", cmd.Props.RetryOnGuestFail), zap.Int("StatusUpdateSec", cmd.Props.StatusUpdateSec))
+	zap.L().Info("Start of the process", zap.String("CmdName", cmd.CmdName))
 
 	cmd.Props.Validate()
 
@@ -133,9 +133,7 @@ func (cmd *UserFollowersCmd) getUsersFromUserIDs(userIDs []string) {
 					cmd.UserIDs[follower.RestID] = userID
 					if !follower.Legacy.Protected {
 						cmd.getUserTweetsFromUserID(follower.RestID)
-						// if tools.IsJapaneseUser(follower) {
 						childUserIDs = append(childUserIDs, follower.RestID)
-						// }
 					}
 					tools.LogOverwrite(cmd.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
 				}

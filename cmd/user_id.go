@@ -16,13 +16,6 @@ type UserIDProps struct {
 	StatusUpdateSec      int    `yaml:"StatusUpdateSec"`
 }
 
-type UserIDCmd struct {
-	CmdName  string
-	Props    UserIDProps
-	Client   *api.Client
-	TweetIDs map[string]string
-}
-
 func (props UserIDProps) Validate() {
 	if props.UserID == "" {
 		zap.L().Fatal("User id is required")
@@ -33,6 +26,13 @@ func (props UserIDProps) Validate() {
 	if props.StatusUpdateSec < 1 {
 		zap.L().Fatal("Status update sec must be greater than 0")
 	}
+}
+
+type UserIDCmd struct {
+	CmdName  string
+	Props    UserIDProps
+	Client   *api.Client
+	TweetIDs map[string]string
 }
 
 func (cmd *UserIDCmd) Execute() {
@@ -47,7 +47,7 @@ func (cmd *UserIDCmd) Execute() {
 	cmd.CmdName = cmd.Props.UserID + "_" + time.Now().Format("20060102150405")
 
 	startDateTime := time.Now()
-	zap.L().Info("Start of the process", zap.String("CmdName", cmd.CmdName), zap.String("UserID", cmd.Props.UserID), zap.Int("StatusUpdateSec", cmd.Props.StatusUpdateSec))
+	zap.L().Info("Start of the process", zap.String("CmdName", cmd.CmdName))
 
 	cmd.Props.Validate()
 
