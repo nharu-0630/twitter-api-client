@@ -10,32 +10,29 @@ import (
 	"go.uber.org/zap"
 )
 
-type UserIDProps struct {
-	UserID               string `yaml:"UserID"`
-	MaxUserTweetsRequest int    `yaml:"MaxUserTweetsRequest"`
-	StatusUpdateSec      int    `yaml:"StatusUpdateSec"`
+type UserFavoriteProps struct {
+	UserID          string `yaml:"UserID"`
+	UntilID         string `yaml:"UntilID"`
+	StatusUpdateSec int    `yaml:"StatusUpdateSec"`
 }
 
-func (props UserIDProps) Validate() {
+func (props UserFavoriteProps) Validate() {
 	if props.UserID == "" {
 		zap.L().Fatal("User id is required")
-	}
-	if props.MaxUserTweetsRequest < 1 {
-		zap.L().Fatal("Max user tweets request must be greater than 0")
 	}
 	if props.StatusUpdateSec < 1 {
 		zap.L().Fatal("Status update sec must be greater than 0")
 	}
 }
 
-type UserIDCmd struct {
+type UserFavoriteCmd struct {
 	CmdName  string
-	Props    UserIDProps
+	Props    UserFavoriteProps
 	Client   *api.Client
 	TweetIDs map[string]string
 }
 
-func (cmd *UserIDCmd) Execute() {
+func (cmd *UserFavoriteCmd) Execute() {
 	cmd.Client = api.NewClient(
 		api.ClientConfig{
 			IsGuestTokenEnabled: false,
@@ -44,7 +41,7 @@ func (cmd *UserIDCmd) Execute() {
 		},
 	)
 	cmd.TweetIDs = make(map[string]string)
-	cmd.CmdName = cmd.Props.UserID + "_" + time.Now().Format("20060102150405")
+	cmd.CmdName = cmd.Props.UserID + "_" + "Likes"
 
 	startDateTime := time.Now()
 	zap.L().Info("Start of the process", zap.String("CmdName", cmd.CmdName))
@@ -59,15 +56,20 @@ func (cmd *UserIDCmd) Execute() {
 	}()
 
 	bottomCursor := ""
-	for i := 0; i < cmd.Props.MaxUserTweetsRequest; i++ {
-		tweets, cursor, err := cmd.Client.UserTweets(cmd.Props.UserID, bottomCursor)
+	for i := 0; true; i++ {
+		tweets, cursor, err := cmd.Client.Likes(cmd.Props.UserID, bottomCursor)
 		if err != nil {
 			zap.L().Fatal(err.Error())
 			break
 		}
-		tools.Log(cmd.CmdName, []string{"Tweet", cmd.Props.UserID, strconv.Itoa(i)}, map[string]interface{}{"Tweets": tweets}, false)
+		tools.Log(cmd.CmdName, []string{"Tweets", cmd.Props.UserID, strconv.Itoa(i)}, map[string]interface{}{"Tweets": tweets}, false)
 		for _, tweet := range tweets {
+			if tweet.RestID == cmd.Props.UntilID {
+				cmd.status("UntilID found")
+				return
+			}
 			cmd.TweetIDs[tweet.RestID] = ""
+			cmd.Client.DownloadAllMedia(cmd.CmdName, tweet)
 		}
 		if cursor.IsAfterLast {
 			break
@@ -80,7 +82,7 @@ func (cmd *UserIDCmd) Execute() {
 	}()
 
 	summary := map[string]interface{}{
-		"Type":  "UserID",
+		"Type":  "UserFavorite",
 		"Props": cmd.Props,
 		"Status": map[string]interface{}{
 			"TweetCount":    len(cmd.TweetIDs),
@@ -94,6 +96,6 @@ func (cmd *UserIDCmd) Execute() {
 	cmd.status("End of the process")
 }
 
-func (cmd *UserIDCmd) status(msg string) {
+func (cmd *UserFavoriteCmd) status(msg string) {
 	zap.L().Info(msg, zap.String("CmdName", cmd.CmdName), zap.Int("TweetCount", len(cmd.TweetIDs)))
 }

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"reflect"
 
 	"github.com/nharu-0630/twitter-api-client/cmd"
 	"github.com/nharu-0630/twitter-api-client/tools"
@@ -35,48 +36,24 @@ func main() {
 		zap.L().Fatal("Failed to unmarshal configuration", zap.Error(err))
 	}
 
-	switch config.CmdType {
-	case "GroupUsers":
-		var props cmd.GroupUsersProps
-		err = yaml.Unmarshal(configFile, &props)
-		if err != nil {
-			zap.L().Fatal("Failed to unmarshal configuration", zap.Error(err))
-		}
-		cmd := cmd.GroupUsersCmd{
-			Props: props,
-		}
-		cmd.Execute()
-	case "UserFollowers":
-		var props cmd.UserFollowersProps
-		err = yaml.Unmarshal(configFile, &props)
-		if err != nil {
-			zap.L().Fatal("Failed to unmarshal configuration", zap.Error(err))
-		}
-		cmd := cmd.UserFollowersCmd{
-			Props: props,
-		}
-		cmd.Execute()
-	case "UserFollowings":
-		var props cmd.UserFollowingsProps
-		err = yaml.Unmarshal(configFile, &props)
-		if err != nil {
-			zap.L().Fatal("Failed to unmarshal configuration", zap.Error(err))
-		}
-		cmd := cmd.UserFollowingsCmd{
-			Props: props,
-		}
-		cmd.Execute()
-	case "UserID":
-		var props cmd.UserIDProps
-		err = yaml.Unmarshal(configFile, &props)
-		if err != nil {
-			zap.L().Fatal("Failed to unmarshal configuration", zap.Error(err))
-		}
-		cmd := cmd.UserIDCmd{
-			Props: props,
-		}
-		cmd.Execute()
-	default:
+	cmdMap := map[string]interface{}{
+		"GroupUsers":     &cmd.GroupUsersCmd{},
+		"UserFavorite":   &cmd.UserFavoriteCmd{},
+		"UserFollowers":  &cmd.UserFollowersCmd{},
+		"UserFollowings": &cmd.UserFollowingsCmd{},
+		"UserID":         &cmd.UserIDCmd{},
+	}
+
+	cmdInstance, exists := cmdMap[config.CmdType]
+	if !exists {
 		zap.L().Fatal("Unknown CmdType", zap.String("CmdType", config.CmdType))
 	}
+
+	propsField := reflect.ValueOf(cmdInstance).Elem().FieldByName("Props").Addr().Interface()
+	err = yaml.Unmarshal(configFile, propsField)
+	if err != nil {
+		zap.L().Fatal("Failed to unmarshal configuration", zap.Error(err))
+	}
+
+	reflect.ValueOf(cmdInstance).MethodByName("Execute").Call(nil)
 }
