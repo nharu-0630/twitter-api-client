@@ -9,5 +9,3 @@ MaxChildRequest: 1
 MaxUserLimit: 3000
 # ゲストトークンでのリクエスト失敗時に認証済みトークンでリトライする
 RetryOnGuestFail: false
-# ステータスを更新する間隔
-StatusUpdateSec: 600

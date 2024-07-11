@@ -1,0 +1,9 @@
+CmdType: UserIDs
+# 対象となるユーザのuser_id
+UserIDs:
+  - 783214
+  - 17306975
+# 最大ユーザツイートリクエスト数
+MaxUserTweetsRequest: 3
+# 最大リプライリクエスト数
+MaxConversationRequest: 3

@@ -1,7 +1,0 @@
-CmdType: UserID
-# 対象となるユーザのuser_id
-UserID: 783214
-# 最大ユーザツイートリクエスト数
-MaxUserTweetsRequest: 9223372036854775807
-# ステータスを更新する間隔
-StatusUpdateSec: 600

@@ -117,3 +117,13 @@ func LogOverwrite(dir string, keys []string, res map[string]interface{}, indent 
 	}
 	return nil
 }
+
+func NewStatusTicker() *time.Ticker {
+	interval := os.Getenv("STATUS_UPDATE_INTERVAL")
+	parsedInterval, err := time.ParseDuration(interval)
+	if err != nil {
+		parsedInterval = 15 * time.Minute
+	}
+	ticker := time.NewTicker(parsedInterval)
+	return ticker
+}

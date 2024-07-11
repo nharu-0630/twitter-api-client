@@ -17,7 +17,6 @@ type UserFollowersProps struct {
 	MaxChildRequest     int    ` yaml:"MaxChildRequest"`
 	MaxUserLimit        int    `yaml:"MaxUserLimit"`
 	RetryOnGuestFail    bool   `yaml:"RetryOnGuestFail"`
-	StatusUpdateSec     int    `yaml:"StatusUpdateSec"`
 }
 
 func (props UserFollowersProps) Validate() {
@@ -33,9 +32,6 @@ func (props UserFollowersProps) Validate() {
 	if props.MaxUserLimit < 1 {
 		zap.L().Fatal("Max user limit must be greater than 0")
 	}
-	if props.StatusUpdateSec < 1 {
-		zap.L().Fatal("Status update sec must be greater than 0")
-	}
 }
 
 type UserFollowersCmd struct {
@@ -49,6 +45,8 @@ type UserFollowersCmd struct {
 }
 
 func (cmd *UserFollowersCmd) Execute() {
+	zap.L().Info("Start of the process")
+	cmd.Props.Validate()
 	cmd.GuestClient = api.NewClient(
 		api.ClientConfig{
 			IsGuestTokenEnabled: true,
@@ -61,20 +59,17 @@ func (cmd *UserFollowersCmd) Execute() {
 			CsrfToken:           os.Getenv("CSRF_TOKEN"),
 		},
 	)
+
+	startDateTime := time.Now()
+	cmd.CmdName = cmd.Props.SeedScreenName + "_" + time.Now().Format("20060102150405")
 	cmd.UserIDs = make(map[string]string)
 	cmd.TweetIDs = make(map[string]string)
 	cmd.LeftChildRequest = cmd.Props.MaxChildRequest
-	cmd.CmdName = cmd.Props.SeedScreenName + "_" + time.Now().Format("20060102150405")
 
-	startDateTime := time.Now()
-	zap.L().Info("Start of the process", zap.String("CmdName", cmd.CmdName))
-
-	cmd.Props.Validate()
-
-	ticker := time.NewTicker(time.Duration(cmd.Props.StatusUpdateSec) * time.Second)
+	ticker := tools.NewStatusTicker()
 	go func() {
 		for range ticker.C {
-			cmd.status("Status update")
+			zap.L().Info("Status update", zap.String("CmdName", cmd.CmdName), zap.Int("UserCount", len(cmd.UserIDs)), zap.Int("TweetCount", len(cmd.TweetIDs)))
 		}
 	}()
 
@@ -86,15 +81,14 @@ func (cmd *UserFollowersCmd) Execute() {
 	tools.Log(cmd.CmdName, []string{"User", user.RestID}, map[string]interface{}{"User": user}, false)
 	seedUserID = append(seedUserID, user.RestID)
 	cmd.UserIDs[user.RestID] = "ROOT"
-	cmd.getUserTweetsFromUserID(user.RestID)
+	cmd.userTweetsExecute(user.RestID)
 	tools.LogOverwrite(cmd.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
 
-	cmd.getUsersFromUserIDs(seedUserID)
+	cmd.usersExecute(seedUserID)
 
 	defer func() {
 		ticker.Stop()
 	}()
-
 	summary := map[string]interface{}{
 		"Type":  "UserFollowers",
 		"Props": cmd.Props,
@@ -109,14 +103,10 @@ func (cmd *UserFollowersCmd) Execute() {
 		},
 	}
 	tools.Log(cmd.CmdName, []string{"Summary"}, summary, true)
-	cmd.status("End of the process")
+	zap.L().Info("End of the process")
 }
 
-func (cmd *UserFollowersCmd) status(msg string) {
-	zap.L().Info(msg, zap.String("CmdName", cmd.CmdName), zap.Int("UserCount", len(cmd.UserIDs)), zap.Int("TweetCount", len(cmd.TweetIDs)))
-}
-
-func (cmd *UserFollowersCmd) getUsersFromUserIDs(userIDs []string) {
+func (cmd *UserFollowersCmd) usersExecute(userIDs []string) {
 	cmd.LeftChildRequest--
 	childUserIDs := []string{}
 	for _, userID := range userIDs {
@@ -132,7 +122,7 @@ func (cmd *UserFollowersCmd) getUsersFromUserIDs(userIDs []string) {
 				if _, exists := cmd.UserIDs[follower.RestID]; !exists {
 					cmd.UserIDs[follower.RestID] = userID
 					if !follower.Legacy.Protected {
-						cmd.getUserTweetsFromUserID(follower.RestID)
+						cmd.userTweetsExecute(follower.RestID)
 						childUserIDs = append(childUserIDs, follower.RestID)
 					}
 					tools.LogOverwrite(cmd.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
@@ -148,11 +138,11 @@ func (cmd *UserFollowersCmd) getUsersFromUserIDs(userIDs []string) {
 		}
 	}
 	if cmd.LeftChildRequest > 0 {
-		cmd.getUsersFromUserIDs(childUserIDs)
+		cmd.usersExecute(childUserIDs)
 	}
 }
 
-func (cmd *UserFollowersCmd) getUserTweetsFromUserID(userID string) {
+func (cmd *UserFollowersCmd) userTweetsExecute(userID string) {
 	var tweets []model.Tweet
 	tweets, _, err := cmd.GuestClient.UserTweets(userID)
 	if err != nil {

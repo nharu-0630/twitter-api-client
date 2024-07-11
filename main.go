@@ -37,11 +37,10 @@ func main() {
 	}
 
 	cmdMap := map[string]interface{}{
-		"GroupUsers":     &cmd.GroupUsersCmd{},
 		"UserFavorite":   &cmd.UserFavoriteCmd{},
 		"UserFollowers":  &cmd.UserFollowersCmd{},
 		"UserFollowings": &cmd.UserFollowingsCmd{},
-		"UserID":         &cmd.UserIDCmd{},
+		"UserIDs":        &cmd.UserIDsCmd{},
 	}
 
 	cmdInstance, exists := cmdMap[config.CmdType]

@@ -11,17 +11,13 @@ import (
 )
 
 type UserFavoriteProps struct {
-	UserID          string `yaml:"UserID"`
-	UntilID         string `yaml:"UntilID"`
-	StatusUpdateSec int    `yaml:"StatusUpdateSec"`
+	UserID  string `yaml:"UserID"`
+	UntilID string `yaml:"UntilID"`
 }
 
 func (props UserFavoriteProps) Validate() {
 	if props.UserID == "" {
 		zap.L().Fatal("User id is required")
-	}
-	if props.StatusUpdateSec < 1 {
-		zap.L().Fatal("Status update sec must be greater than 0")
 	}
 }
 
@@ -33,6 +29,8 @@ type UserFavoriteCmd struct {
 }
 
 func (cmd *UserFavoriteCmd) Execute() {
+	zap.L().Info("Start of the process")
+	cmd.Props.Validate()
 	cmd.Client = api.NewClient(
 		api.ClientConfig{
 			IsGuestTokenEnabled: false,
@@ -40,18 +38,15 @@ func (cmd *UserFavoriteCmd) Execute() {
 			CsrfToken:           os.Getenv("CSRF_TOKEN"),
 		},
 	)
-	cmd.TweetIDs = make(map[string]string)
-	cmd.CmdName = cmd.Props.UserID + "_" + "Likes"
 
 	startDateTime := time.Now()
-	zap.L().Info("Start of the process", zap.String("CmdName", cmd.CmdName))
+	cmd.CmdName = cmd.Props.UserID + "_" + "Likes"
+	cmd.TweetIDs = make(map[string]string)
 
-	cmd.Props.Validate()
-
-	ticker := time.NewTicker(time.Duration(cmd.Props.StatusUpdateSec) * time.Second)
+	ticker := tools.NewStatusTicker()
 	go func() {
 		for range ticker.C {
-			cmd.status("Status update")
+			zap.L().Info("Status update", zap.String("CmdName", cmd.CmdName), zap.Int("TweetCount", len(cmd.TweetIDs)))
 		}
 	}()
 
@@ -65,7 +60,7 @@ func (cmd *UserFavoriteCmd) Execute() {
 		tools.Log(cmd.CmdName, []string{"Tweets", cmd.Props.UserID, strconv.Itoa(i)}, map[string]interface{}{"Tweets": tweets}, false)
 		for _, tweet := range tweets {
 			if tweet.RestID == cmd.Props.UntilID {
-				cmd.status("UntilID found")
+				zap.L().Info("Reached until_id", zap.String("UntilID", cmd.Props.UntilID))
 				return
 			}
 			cmd.TweetIDs[tweet.RestID] = ""
@@ -80,7 +75,6 @@ func (cmd *UserFavoriteCmd) Execute() {
 	defer func() {
 		ticker.Stop()
 	}()
-
 	summary := map[string]interface{}{
 		"Type":  "UserFavorite",
 		"Props": cmd.Props,
@@ -93,9 +87,5 @@ func (cmd *UserFavoriteCmd) Execute() {
 		},
 	}
 	tools.Log(cmd.CmdName, []string{"Summary"}, summary, true)
-	cmd.status("End of the process")
-}
-
-func (cmd *UserFavoriteCmd) status(msg string) {
-	zap.L().Info(msg, zap.String("CmdName", cmd.CmdName), zap.Int("TweetCount", len(cmd.TweetIDs)))
+	zap.L().Info("End of the process")
 }

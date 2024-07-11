@@ -1,7 +1,5 @@
 CmdType: UserFavorite
 # 対象となるユーザのuser_id
 UserID: 1003084799592972288
-# 
+# 上限となるツイートのtweet_id
 UntilID: 1809611704113795178
-# ステータスを更新する間隔
-StatusUpdateSec: 600
