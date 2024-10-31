@@ -37,6 +37,7 @@ func main() {
 	}
 
 	cmdMap := map[string]interface{}{
+		"Politician":     &cmd.PoliticianCmd{},
 		"UserFavorite":   &cmd.UserFavoriteCmd{},
 		"UserFollowers":  &cmd.UserFollowersCmd{},
 		"UserFollowings": &cmd.UserFollowingsCmd{},
