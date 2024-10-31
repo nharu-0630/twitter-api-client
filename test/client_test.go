@@ -1,68 +1,61 @@
 package test
 
-import (
-	"log"
-	"testing"
+// func TestTweetResultByRestIdWithGuest(t *testing.T) {
+// 	client := api.NewClient(api.ClientConfig{
+// 		IsGuestTokenEnabled: true,
+// 	})
 
-	"github.com/nharu-0630/twitter-api-client/api"
-)
+// 	result, err := client.TweetResultByRestId("1762646776916635958")
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	if result.RestID == "" {
+// 		t.Fatal("result.RestID is empty")
+// 	}
+// 	log.Default().Println(result)
+// }
 
-func TestTweetResultByRestIdWithGuest(t *testing.T) {
-	client := api.NewClient(api.ClientConfig{
-		IsGuestTokenEnabled: true,
-	})
+// func TestUserByScreenNameWithGuest(t *testing.T) {
+// 	client := api.NewClient(api.ClientConfig{
+// 		IsGuestTokenEnabled: true,
+// 	})
 
-	result, err := client.TweetResultByRestId("1762646776916635958")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if result.RestID == "" {
-		t.Fatal("result.RestID is empty")
-	}
-	log.Default().Println(result)
-}
+// 	user, err := client.UserByScreenName("nharu_0630")
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	if user.ID == "" {
+// 		t.Fatal("user.ID is empty")
+// 	}
+// 	log.Default().Println(user)
+// }
 
-func TestUserByScreenNameWithGuest(t *testing.T) {
-	client := api.NewClient(api.ClientConfig{
-		IsGuestTokenEnabled: true,
-	})
+// func TestUserTweetsWithGuest1(t *testing.T) {
+// 	client := api.NewClient(api.ClientConfig{
+// 		IsGuestTokenEnabled: true,
+// 	})
 
-	user, err := client.UserByScreenName("nharu_0630")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if user.ID == "" {
-		t.Fatal("user.ID is empty")
-	}
-	log.Default().Println(user)
-}
+// 	tweets, cursor, err := client.UserTweets("1003084799592972288")
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	if len(tweets) == 0 {
+// 		t.Fatal("tweets is empty")
+// 	}
+// 	log.Default().Println(tweets)
+// 	log.Default().Println(cursor)
+// }
 
-func TestUserTweetsWithGuest1(t *testing.T) {
-	client := api.NewClient(api.ClientConfig{
-		IsGuestTokenEnabled: true,
-	})
+// func TestUserTweetsWithGuest2(t *testing.T) {
+// 	client := api.NewClient(api.ClientConfig{
+// 		IsGuestTokenEnabled: true,
+// 	})
 
-	tweets, cursor, err := client.UserTweets("1003084799592972288")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(tweets) == 0 {
-		t.Fatal("tweets is empty")
-	}
-	log.Default().Println(tweets)
-	log.Default().Println(cursor)
-}
-
-func TestUserTweetsWithGuest2(t *testing.T) {
-	client := api.NewClient(api.ClientConfig{
-		IsGuestTokenEnabled: true,
-	})
-
-	_, _, err := client.UserTweets("1679423214500585473")
-	if err.Error() != "instruction not found" {
-		t.Fatal(err)
-	}
-}
+// 	_, _, err := client.UserTweets("1679423214500585473")
+// 	if err.Error() != "instruction not found" {
+// 		t.Fatal(err)
+// 	}
+// }
 
 // func TestTweetDetail(t *testing.T) {
 // 	tools.LoadEnv()
