@@ -17,7 +17,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.23'
+          go-version: "1.23"
 
       - name: Run tests
         run: go test -v ./...
@@ -25,62 +25,46 @@ jobs:
   build-and-release:
     needs: test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - os: windows-latest
-            goos: windows
-            arch: amd64
-            extension: .exe
-          - os: ubuntu-latest
-            goos: linux
-            arch: amd64
-            extension: ""
-          - os: macos-latest
-            goos: darwin
-            arch: amd64
-            extension: ""
-
     steps:
       - uses: actions/checkout@v3
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.23'
+          go-version: "1.23"
 
       - name: Get project name
         id: get_name
         run: echo "PROJECT_NAME=$(basename $(pwd))" >> $GITHUB_OUTPUT
 
-      - name: Build
+      - name: Build for Windows
         env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.arch }}
+          GOOS: windows
+          GOARCH: amd64
         run: |
-          go build -v -o ${{ steps.get_name.outputs.PROJECT_NAME }}${{ matrix.extension }}
+          go build -v -o ${{ steps.get_name.outputs.PROJECT_NAME }}_windows_amd64.exe
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ steps.get_name.outputs.PROJECT_NAME }}-${{ matrix.goos }}-${{ matrix.arch }}
-          path: ${{ steps.get_name.outputs.PROJECT_NAME }}${{ matrix.extension }}
+      - name: Build for Linux
+        env:
+          GOOS: linux
+          GOARCH: amd64
+        run: |
+          go build -v -o ${{ steps.get_name.outputs.PROJECT_NAME }}_linux_amd64
 
-  create-release:
-    needs: build-and-release
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Download all artifacts
-        uses: actions/download-artifact@v3
+      - name: Build for macOS
+        env:
+          GOOS: darwin
+          GOARCH: amd64
+        run: |
+          go build -v -o ${{ steps.get_name.outputs.PROJECT_NAME }}_darwin_amd64
 
       - name: Create Release
-        id: create_release
         uses: softprops/action-gh-release@v1
         with:
           name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
           files: |
-            **/*
+            ${{ steps.get_name.outputs.PROJECT_NAME }}_windows_amd64.exe
+            ${{ steps.get_name.outputs.PROJECT_NAME }}_linux_amd64
+            ${{ steps.get_name.outputs.PROJECT_NAME }}_darwin_amd64
