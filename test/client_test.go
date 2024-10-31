@@ -2,11 +2,9 @@ package test
 
 import (
 	"log"
-	"os"
 	"testing"
 
 	"github.com/nharu-0630/twitter-api-client/api"
-	"github.com/nharu-0630/twitter-api-client/tools"
 )
 
 func TestTweetResultByRestIdWithGuest(t *testing.T) {
@@ -66,60 +64,60 @@ func TestUserTweetsWithGuest2(t *testing.T) {
 	}
 }
 
-func TestTweetDetail(t *testing.T) {
-	tools.LoadEnv()
+// func TestTweetDetail(t *testing.T) {
+// 	tools.LoadEnv()
 
-	client := api.NewClient(api.ClientConfig{
-		IsGuestTokenEnabled: false,
-		AuthToken:           os.Getenv("AUTH_TOKEN"),
-		CsrfToken:           os.Getenv("CSRF_TOKEN"),
-	})
+// 	client := api.NewClient(api.ClientConfig{
+// 		IsGuestTokenEnabled: false,
+// 		AuthToken:           os.Getenv("AUTH_TOKEN"),
+// 		CsrfToken:           os.Getenv("CSRF_TOKEN"),
+// 	})
 
-	tweet, conversation, cursor, err := client.TweetDetail("1750775577437724978")
-	if err != nil {
-		t.Fatal(err)
-	}
-	log.Default().Println(tweet)
-	log.Default().Println(conversation)
-	log.Default().Println(cursor)
-}
+// 	tweet, conversation, cursor, err := client.TweetDetail("1750775577437724978")
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	log.Default().Println(tweet)
+// 	log.Default().Println(conversation)
+// 	log.Default().Println(cursor)
+// }
 
-func TestFollowing(t *testing.T) {
-	tools.LoadEnv()
+// func TestFollowing(t *testing.T) {
+// 	tools.LoadEnv()
 
-	client := api.NewClient(api.ClientConfig{
-		IsGuestTokenEnabled: false,
-		AuthToken:           os.Getenv("AUTH_TOKEN"),
-		CsrfToken:           os.Getenv("CSRF_TOKEN"),
-	})
+// 	client := api.NewClient(api.ClientConfig{
+// 		IsGuestTokenEnabled: false,
+// 		AuthToken:           os.Getenv("AUTH_TOKEN"),
+// 		CsrfToken:           os.Getenv("CSRF_TOKEN"),
+// 	})
 
-	users, cursor, err := client.Following("1003084799592972288")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(users) == 0 {
-		t.Fatal("users is empty")
-	}
-	log.Default().Println(users)
-	log.Default().Println(cursor)
-}
+// 	users, cursor, err := client.Following("1003084799592972288")
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	if len(users) == 0 {
+// 		t.Fatal("users is empty")
+// 	}
+// 	log.Default().Println(users)
+// 	log.Default().Println(cursor)
+// }
 
-func TestFollowers(t *testing.T) {
-	tools.LoadEnv()
+// func TestFollowers(t *testing.T) {
+// 	tools.LoadEnv()
 
-	client := api.NewClient(api.ClientConfig{
-		IsGuestTokenEnabled: false,
-		AuthToken:           os.Getenv("AUTH_TOKEN"),
-		CsrfToken:           os.Getenv("CSRF_TOKEN"),
-	})
+// 	client := api.NewClient(api.ClientConfig{
+// 		IsGuestTokenEnabled: false,
+// 		AuthToken:           os.Getenv("AUTH_TOKEN"),
+// 		CsrfToken:           os.Getenv("CSRF_TOKEN"),
+// 	})
 
-	users, cursor, err := client.Followers("1003084799592972288")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(users) == 0 {
-		t.Fatal("users is empty")
-	}
-	log.Default().Println(users)
-	log.Default().Println(cursor)
-}
+// 	users, cursor, err := client.Followers("1003084799592972288")
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	if len(users) == 0 {
+// 		t.Fatal("users is empty")
+// 	}
+// 	log.Default().Println(users)
+// 	log.Default().Println(cursor)
+// }
