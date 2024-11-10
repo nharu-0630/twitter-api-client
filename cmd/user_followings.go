@@ -47,17 +47,10 @@ type UserFollowingsCmd struct {
 func (cmd *UserFollowingsCmd) Execute() {
 	zap.L().Info("Start of the process")
 	cmd.Props.Validate()
-	cmd.GuestClient = api.NewClient(
-		api.ClientConfig{
-			IsGuestTokenEnabled: true,
-		},
-	)
-	cmd.Client = api.NewClient(
-		api.ClientConfig{
-			IsGuestTokenEnabled: false,
-			AuthToken:           os.Getenv("AUTH_TOKEN"),
-			CsrfToken:           os.Getenv("CSRF_TOKEN"),
-		},
+	cmd.GuestClient = api.NewGuestClient()
+	cmd.Client = api.NewAuthorizedClient(
+		os.Getenv("AUTH_TOKEN"),
+		os.Getenv("CSRF_TOKEN"),
 	)
 
 	startDateTime := time.Now()

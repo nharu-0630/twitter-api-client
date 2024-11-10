@@ -31,12 +31,9 @@ type PoliticianCmd struct {
 
 func (cmd *PoliticianCmd) Execute() {
 	zap.L().Info("Start of the process")
-	cmd.Client = api.NewClient(
-		api.ClientConfig{
-			IsGuestTokenEnabled: false,
-			AuthToken:           os.Getenv("AUTH_TOKEN"),
-			CsrfToken:           os.Getenv("CSRF_TOKEN"),
-		},
+	cmd.Client = api.NewAuthorizedClient(
+		os.Getenv("AUTH_TOKEN"),
+		os.Getenv("CSRF_TOKEN"),
 	)
 	cmd.CmdName = "Politician_" + time.Now().Format("20060102150405")
 

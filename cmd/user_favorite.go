@@ -31,12 +31,9 @@ type UserFavoriteCmd struct {
 func (cmd *UserFavoriteCmd) Execute() {
 	zap.L().Info("Start of the process")
 	cmd.Props.Validate()
-	cmd.Client = api.NewClient(
-		api.ClientConfig{
-			IsGuestTokenEnabled: false,
-			AuthToken:           os.Getenv("AUTH_TOKEN"),
-			CsrfToken:           os.Getenv("CSRF_TOKEN"),
-		},
+	cmd.Client = api.NewAuthorizedClient(
+		os.Getenv("AUTH_TOKEN"),
+		os.Getenv("CSRF_TOKEN"),
 	)
 
 	startDateTime := time.Now()

@@ -39,12 +39,9 @@ type UserIDsCmd struct {
 func (cmd *UserIDsCmd) Execute() {
 	zap.L().Info("Start of the process")
 	cmd.Props.Validate()
-	cmd.Client = api.NewClient(
-		api.ClientConfig{
-			IsGuestTokenEnabled: false,
-			AuthToken:           os.Getenv("AUTH_TOKEN"),
-			CsrfToken:           os.Getenv("CSRF_TOKEN"),
-		},
+	cmd.Client = api.NewAuthorizedClient(
+		os.Getenv("AUTH_TOKEN"),
+		os.Getenv("CSRF_TOKEN"),
 	)
 
 	for _, userID := range cmd.Props.UserIDs {

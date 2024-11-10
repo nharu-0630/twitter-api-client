@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/nharu-0630/twitter-api-client/cmd"
+	"github.com/nharu-0630/twitter-api-client/model"
 	"github.com/nharu-0630/twitter-api-client/util"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
@@ -44,10 +45,7 @@ func main() {
 	if err != nil {
 		zap.L().Fatal("設定ファイルの読み込みに失敗しました", zap.Error(err))
 	}
-
-	var config struct {
-		typ string `yaml:"type"`
-	}
+	var config model.Config
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		zap.L().Fatal("設定ファイルのパースに失敗しました", zap.Error(err))
@@ -61,7 +59,7 @@ func main() {
 		"user_ids":        &cmd.UserIDsCmd{},
 	}
 
-	instance, exists := cmdMap[config.typ]
+	instance, exists := cmdMap[config.Type]
 	if !exists {
 		zap.L().Fatal("指定されたコマンドは存在しません")
 	}

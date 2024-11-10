@@ -12,14 +12,14 @@ type RateLimit struct {
 	reset     int
 }
 
-func (r *RateLimit) Wait() {
+func (r *RateLimit) wait() {
 	if r.remaining == 0 {
 		t := time.Unix(int64(r.reset), 0)
 		time.Sleep(time.Until(t))
 	}
 }
 
-func (r *RateLimit) Update(header http.Header) {
+func (r *RateLimit) update(header http.Header) {
 	if limit := header.Get("x-rate-limit-limit"); limit != "" {
 		intLimit, err := strconv.Atoi(limit)
 		if err == nil {
