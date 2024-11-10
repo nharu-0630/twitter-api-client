@@ -99,6 +99,68 @@ func ParseTimelineEntriesTweets(res map[string]interface{}) ([]model.Tweet, mode
 	return tweets, resCursor, nil
 }
 
+func ParseSearchTimelineEntriesTweets(res map[string]interface{}) ([]model.Tweet, model.Cursor, error) {
+	if res["search_by_raw_query"] == nil {
+		return nil, model.Cursor{}, errors.New("search_by_raw_query not found")
+	}
+	if res["search_by_raw_query"].(map[string]interface{})["search_timeline"] == nil {
+		return nil, model.Cursor{}, errors.New("search_timeline not found")
+	}
+	if res["search_by_raw_query"].(map[string]interface{})["search_timeline"].(map[string]interface{})["timeline"] == nil {
+		return nil, model.Cursor{}, errors.New("timeline not found")
+	}
+	if res["search_by_raw_query"].(map[string]interface{})["search_timeline"].(map[string]interface{})["timeline"].(map[string]interface{})["instructions"] == nil {
+		return nil, model.Cursor{}, errors.New("instructions not found")
+	}
+	instructions := res["search_by_raw_query"].(map[string]interface{})["search_timeline"].(map[string]interface{})["timeline"].(map[string]interface{})["instructions"].([]interface{})
+	var data map[string]interface{}
+	for _, instruction := range instructions {
+		instructionType := instruction.(map[string]interface{})["type"]
+		if instructionType == "TimelineAddEntries" {
+			data = instruction.(map[string]interface{})
+			break
+		}
+	}
+	if data == nil {
+		return nil, model.Cursor{}, errors.New("instruction not found")
+	}
+
+	tweets := make([]model.Tweet, 0)
+	resCursor := model.Cursor{}
+	entries := data["entries"].([]interface{})
+	for _, entry := range entries {
+		content := entry.(map[string]interface{})["content"]
+		entryID := entry.(map[string]interface{})["entryId"].(string)
+		entryType := content.(map[string]interface{})["entryType"]
+		if entryType == "TimelineTimelineItem" {
+			if strings.HasPrefix(entryID, "tweet-") {
+				tweetResults := content.(map[string]interface{})["itemContent"].(map[string]interface{})["tweet_results"].(map[string]interface{})
+				if tweetResults["result"] == nil {
+					continue
+				}
+				tweet, err := ParseTweet(tweetResults["result"].(map[string]interface{}))
+				if err != nil {
+					continue
+				}
+				tweets = append(tweets, tweet)
+			}
+			if strings.HasPrefix(entryID, "cursor-top") {
+				resCursor.TopCursor = content.(map[string]interface{})["value"].(string)
+			} else if strings.HasPrefix(entryID, "cursor-bottom") {
+				resCursor.BottomCursor = content.(map[string]interface{})["value"].(string)
+			}
+		} else if entryType == "TimelineTimelineCursor" {
+			if strings.HasPrefix(entryID, "cursor-top") {
+				resCursor.TopCursor = content.(map[string]interface{})["value"].(string)
+			} else if strings.HasPrefix(entryID, "cursor-bottom") {
+				resCursor.BottomCursor = content.(map[string]interface{})["value"].(string)
+			}
+		}
+	}
+	resCursor.IsAfterLast = len(tweets) == 0 || resCursor.BottomCursor == ""
+	return tweets, resCursor, nil
+}
+
 func ParseTimelineEntriesBookmarksTweets(res map[string]interface{}) ([]model.Tweet, model.Cursor, error) {
 	if res["bookmark_timeline_v2"] == nil {
 		return nil, model.Cursor{}, errors.New("bookmark_timeline_v2 not found")

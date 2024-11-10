@@ -33,3 +33,8 @@ func (cp *ClientsPipe) Followers(userID string, cursor ...string) ([]model.User,
 	client := cp.operation("Followers")
 	return (&client).Followers(userID, cursor...)
 }
+
+func (cp *ClientsPipe) SearchTimeline(rawQuery string, cursor ...string) ([]model.Tweet, model.Cursor, error) {
+	client := cp.operation("SearchTimeline")
+	return (&client).SearchTimeline(rawQuery, cursor...)
+}
