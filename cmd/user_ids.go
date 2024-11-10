@@ -7,14 +7,14 @@ import (
 
 	"github.com/nharu-0630/twitter-api-client/api"
 	"github.com/nharu-0630/twitter-api-client/model"
-	"github.com/nharu-0630/twitter-api-client/tools"
+	"github.com/nharu-0630/twitter-api-client/util"
 	"go.uber.org/zap"
 )
 
 type UserIDsProps struct {
-	UserIDs                []string `yaml:"UserIDs"`
-	MaxUserTweetsRequest   int      `yaml:"MaxUserTweetsRequest"`
-	MaxConversationRequest int      `yaml:"MaxConversationRequest"`
+	UserIDs                []string `yaml:"user_ids"`
+	MaxUserTweetsRequest   int      `yaml:"max_user_tweets_request"`
+	MaxConversationRequest int      `yaml:"max_conversation_request"`
 }
 
 func (props UserIDsProps) Validate() {
@@ -52,7 +52,7 @@ func (cmd *UserIDsCmd) Execute() {
 		cmd.CmdName = userID + "_" + time.Now().Format("20060102150405")
 		cmd.TweetIDs = make(map[string]string)
 
-		ticker := tools.NewStatusTicker()
+		ticker := util.NewStatusTicker()
 		go func() {
 			for range ticker.C {
 				zap.L().Info("Status update", zap.String("CmdName", cmd.CmdName), zap.Int("TweetCount", len(cmd.TweetIDs)))
@@ -70,10 +70,10 @@ func (cmd *UserIDsCmd) Execute() {
 				cmd.TweetIDs[tweet.RestID] = ""
 			}
 			if cmd.Props.MaxConversationRequest == 0 {
-				tools.Log(cmd.CmdName, []string{"Tweet", userID, strconv.Itoa(i)}, map[string]interface{}{"Tweets": tweets}, false)
+				util.Log(cmd.CmdName, []string{"Tweet", userID, strconv.Itoa(i)}, map[string]interface{}{"Tweets": tweets}, false)
 			} else {
 				conversation := cmd.conversationExecute(tweets)
-				tools.Log(cmd.CmdName, []string{"Tweet", userID, strconv.Itoa(i)}, map[string]interface{}{"Tweets": conversation}, false)
+				util.Log(cmd.CmdName, []string{"Tweet", userID, strconv.Itoa(i)}, map[string]interface{}{"Tweets": conversation}, false)
 			}
 			if cursor.IsAfterLast {
 				break
@@ -95,7 +95,7 @@ func (cmd *UserIDsCmd) Execute() {
 				"SecPerTweet":   time.Since(startDateTime).Seconds() / float64(len(cmd.TweetIDs)),
 			},
 		}
-		tools.Log(cmd.CmdName, []string{"Summary"}, summary, true)
+		util.Log(cmd.CmdName, []string{"Summary"}, summary, true)
 	}
 	zap.L().Info("End of the process")
 }

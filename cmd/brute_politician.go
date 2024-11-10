@@ -3,10 +3,10 @@ package cmd
 import "github.com/nharu-0630/twitter-api-client/api"
 
 type BrutePoliticianProps struct {
-	Politicians   []Politician `yaml:"Politicians"`
-	IntervalDays  int          `yaml:"IntervalDays"`
-	SinceDateTime string       `yaml:"SinceDateTime"`
-	UntilDateTime string       `yaml:"UntilDateTime"`
+	Politicians   []Politician `yaml:"politicians"`
+	IntervalDays  int          `yaml:"interval_days"`
+	SinceDateTime string       `yaml:"since_date_time"`
+	UntilDateTime string       `yaml:"until_date_time"`
 }
 
 type BrutePoliticianCmd struct {

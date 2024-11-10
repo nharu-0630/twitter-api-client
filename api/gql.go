@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/nharu-0630/twitter-api-client/model"
-	"github.com/nharu-0630/twitter-api-client/tools"
+	"github.com/nharu-0630/twitter-api-client/util"
 	"go.uber.org/zap"
 )
 
@@ -17,7 +17,7 @@ func (c *Client) TweetResultByRestId(tweetID string) (model.Tweet, error) {
 		"features":  features,
 	}
 	res, err := c.gql("GET", "7xflPyRiUxGVbJd4uWmbfg", "TweetResultByRestId", params)
-	tools.LogRaw([]string{"TweetResultByRestId", tweetID}, res, false)
+	util.LogRaw([]string{"TweetResultByRestId", tweetID}, res, false)
 	if err != nil {
 		return model.Tweet{}, err
 	}
@@ -45,7 +45,7 @@ func (c *Client) UserByScreenName(screenName string) (model.User, error) {
 		"fieldToggles": fieldToggles,
 	}
 	res, err := c.gql("GET", "qW5u-DAuXpMEG0zA1F7UGQ", "UserByScreenName", params)
-	tools.LogRaw([]string{"UserByScreenName", screenName}, res, false)
+	util.LogRaw([]string{"UserByScreenName", screenName}, res, false)
 	if err != nil {
 		return model.User{}, err
 	}
@@ -81,7 +81,7 @@ func (c *Client) Likes(userID string, cursor ...string) ([]model.Tweet, model.Cu
 		"fieldToggles": fieldToggles,
 	}
 	res, err := c.gql("GET", "RaAkBb4XXis-atDL3rV-xw", "Likes", params)
-	tools.LogRaw([]string{"Likes", userID}, res, false)
+	util.LogRaw([]string{"Likes", userID}, res, false)
 	if err != nil {
 		return nil, model.Cursor{}, err
 	}
@@ -105,7 +105,7 @@ func (c *Client) Bookmarks(cursor ...string) ([]model.Tweet, model.Cursor, error
 		"features":  features,
 	}
 	res, err := c.gql("GET", "yzqS_xq0glDD7YZJ2YDaiA", "Bookmarks", params)
-	tools.LogRaw([]string{"Bookmarks"}, res, false)
+	util.LogRaw([]string{"Bookmarks"}, res, false)
 	if err != nil {
 		return nil, model.Cursor{}, err
 	}
@@ -128,7 +128,7 @@ func (c *Client) UserTweets(userID string, cursor ...string) ([]model.Tweet, mod
 		"fieldToggles": fieldToggles,
 	}
 	res, err := c.gql("GET", "9zyyd1hebl7oNWIPdA8HRw", "UserTweets", params)
-	tools.LogRaw([]string{"UserTweets", userID}, res, false)
+	util.LogRaw([]string{"UserTweets", userID}, res, false)
 	if err != nil {
 		return nil, model.Cursor{}, err
 	}
@@ -151,7 +151,7 @@ func (c *Client) TweetDetail(focalTweetID string, cursor ...string) (model.Tweet
 		"fieldToggles": fieldToggles,
 	}
 	res, err := c.gql("GET", "VwKJcAd7zqlBOitPLUrB8A", "TweetDetail", params)
-	tools.LogRaw([]string{"TweetDetail", focalTweetID}, res, false)
+	util.LogRaw([]string{"TweetDetail", focalTweetID}, res, false)
 	if err != nil {
 		return model.Tweet{}, nil, model.Cursor{}, err
 	}
@@ -172,7 +172,7 @@ func (c *Client) Following(userID string, cursor ...string) ([]model.User, model
 		"features":  features,
 	}
 	res, err := c.gql("GET", "7FEKOPNAvxWASt6v9gfCXw", "Following", params)
-	tools.LogRaw([]string{"Following", userID}, res, false)
+	util.LogRaw([]string{"Following", userID}, res, false)
 	if err != nil {
 		return nil, model.Cursor{}, err
 	}
@@ -193,7 +193,7 @@ func (c *Client) Followers(userID string, cursor ...string) ([]model.User, model
 		"features":  features,
 	}
 	res, err := c.gql("GET", "DMcBoZkXf9axSfV2XND0Ig", "Followers", params)
-	tools.LogRaw([]string{"Followers", userID}, res, false)
+	util.LogRaw([]string{"Followers", userID}, res, false)
 	if err != nil {
 		return nil, model.Cursor{}, err
 	}

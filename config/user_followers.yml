@@ -1,11 +1,11 @@
-CmdType: UserFollowers
+type: user_followers
 # シードとなるユーザーのscreen_name
-SeedScreenName: x
+seed_screen_name: x
 # 1ユーザあたりの最大フォロワーリクエスト数
-MaxFollowersRequest: 9223372036854775807
+max_followers_request: 9223372036854775807
 # シードとなるユーザからの最大深度 1の場合はシードとなるユーザのフォロワーのみ取得
-MaxChildRequest: 1
+max_child_request: 1
 # 取得するユーザー数の上限
-MaxUserLimit: 3000
+max_user_limit: 3000
 # ゲストトークンでのリクエスト失敗時に認証済みトークンでリトライする
-RetryOnGuestFail: false
+retry_on_guest_fail: false

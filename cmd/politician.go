@@ -7,12 +7,12 @@ import (
 
 	"github.com/nharu-0630/twitter-api-client/api"
 	"github.com/nharu-0630/twitter-api-client/model"
-	"github.com/nharu-0630/twitter-api-client/tools"
+	"github.com/nharu-0630/twitter-api-client/util"
 	"go.uber.org/zap"
 )
 
 type PoliticianProps struct {
-	Politicians []Politician `yaml:"Politicians"`
+	Politicians []Politician `yaml:"politicians"`
 }
 
 type Politician struct {
@@ -59,7 +59,7 @@ func (cmd *PoliticianCmd) Execute() {
 				zap.L().Error("Failed to get user", zap.Error(err))
 				continue
 			}
-			tools.Log(cmd.CmdName, []string{"User", politician.PartyName, candidateName}, map[string]interface{}{"User": user}, false)
+			util.Log(cmd.CmdName, []string{"User", politician.PartyName, candidateName}, map[string]interface{}{"User": user}, false)
 
 			var tweets []model.Tweet
 			bottomCursor := ""
@@ -75,7 +75,7 @@ func (cmd *PoliticianCmd) Execute() {
 				}
 				bottomCursor = cursor.BottomCursor
 			}
-			tools.Log(cmd.CmdName, []string{"Tweets", politician.PartyName, candidateName}, map[string]interface{}{"Tweets": tweets}, false)
+			util.Log(cmd.CmdName, []string{"Tweets", politician.PartyName, candidateName}, map[string]interface{}{"Tweets": tweets}, false)
 		}
 	}
 

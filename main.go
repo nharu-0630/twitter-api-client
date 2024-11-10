@@ -3,57 +3,74 @@ package main
 import (
 	"flag"
 	"os"
-	"path/filepath"
 	"reflect"
 
 	"github.com/nharu-0630/twitter-api-client/cmd"
-	"github.com/nharu-0630/twitter-api-client/tools"
+	"github.com/nharu-0630/twitter-api-client/util"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )
 
-func main() {
-	tools.LoadEnv()
-	tools.SetZapGlobals()
-	flag.Parse()
-	ymlFilePath := flag.Arg(0)
-	absPath, err := filepath.Abs(ymlFilePath)
-	if err != nil {
-		zap.L().Fatal("Failed to get absolute path", zap.Error(err))
-	}
-	ymlFilePath = absPath
+var (
+	version  string
+	revision string
+	build    string
+)
 
-	configFile, err := os.ReadFile(ymlFilePath)
+func main() {
+	util.LoadEnv()
+	util.SetZapGlobals()
+
+	var (
+		configPath  = flag.String("c", "./default.yml", "設定ファイルのパス")
+		showVersion = flag.Bool("v", false, "バージョンを表示")
+		showHelp    = flag.Bool("h", false, "ヘルプを表示")
+	)
+	flag.Parse()
+
+	if *showVersion {
+		println("version:", version)
+		println("revision:", revision)
+		println("build:", build)
+		os.Exit(0)
+	}
+
+	if *showHelp {
+		flag.Usage()
+		os.Exit(0)
+	}
+
+	data, err := os.ReadFile(*configPath)
 	if err != nil {
-		zap.L().Fatal("Failed to read configuration file", zap.Error(err))
+		zap.L().Fatal("設定ファイルの読み込みに失敗しました", zap.Error(err))
 	}
 
 	var config struct {
-		CmdType string `yaml:"CmdType"`
+		typ string `yaml:"type"`
 	}
-	err = yaml.Unmarshal(configFile, &config)
+	err = yaml.Unmarshal(data, &config)
 	if err != nil {
-		zap.L().Fatal("Failed to unmarshal configuration", zap.Error(err))
+		zap.L().Fatal("設定ファイルのパースに失敗しました", zap.Error(err))
 	}
 
 	cmdMap := map[string]interface{}{
-		"Politician":     &cmd.PoliticianCmd{},
-		"UserFavorite":   &cmd.UserFavoriteCmd{},
-		"UserFollowers":  &cmd.UserFollowersCmd{},
-		"UserFollowings": &cmd.UserFollowingsCmd{},
-		"UserIDs":        &cmd.UserIDsCmd{},
+		"politician":      &cmd.PoliticianCmd{},
+		"user_favorite":   &cmd.UserFavoriteCmd{},
+		"user_followers":  &cmd.UserFollowersCmd{},
+		"user_followings": &cmd.UserFollowingsCmd{},
+		"user_ids":        &cmd.UserIDsCmd{},
 	}
 
-	cmdInstance, exists := cmdMap[config.CmdType]
+	instance, exists := cmdMap[config.typ]
 	if !exists {
-		zap.L().Fatal("Unknown CmdType", zap.String("CmdType", config.CmdType))
+		zap.L().Fatal("指定されたコマンドは存在しません")
 	}
 
-	propsField := reflect.ValueOf(cmdInstance).Elem().FieldByName("Props").Addr().Interface()
-	err = yaml.Unmarshal(configFile, propsField)
+	props := reflect.ValueOf(instance).Elem().FieldByName("Props").Addr().Interface()
+	err = yaml.Unmarshal(data, props)
 	if err != nil {
-		zap.L().Fatal("Failed to unmarshal configuration", zap.Error(err))
+		zap.L().Fatal("設定ファイルのパースに失敗しました", zap.Error(err))
 	}
 
-	reflect.ValueOf(cmdInstance).MethodByName("Execute").Call(nil)
+	reflect.ValueOf(instance).MethodByName("Execute").Call(nil)
 }

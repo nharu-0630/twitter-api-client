@@ -1,0 +1,5 @@
+type: user_favorite
+# 対象となるユーザのuser_id
+user_id: 1003084799592972288
+# 上限となるツイートのtweet_id
+until_id: 1809611704113795178

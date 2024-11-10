@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/nharu-0630/twitter-api-client/api"
-	"github.com/nharu-0630/twitter-api-client/tools"
+	"github.com/nharu-0630/twitter-api-client/util"
 	"go.uber.org/zap"
 )
 
 type UserFavoriteProps struct {
-	UserID  string `yaml:"UserID"`
-	UntilID string `yaml:"UntilID"`
+	UserID  string `yaml:"user_id"`
+	UntilID string `yaml:"until_id"`
 }
 
 func (props UserFavoriteProps) Validate() {
@@ -43,7 +43,7 @@ func (cmd *UserFavoriteCmd) Execute() {
 	cmd.CmdName = cmd.Props.UserID + "_" + "Likes"
 	cmd.TweetIDs = make(map[string]string)
 
-	ticker := tools.NewStatusTicker()
+	ticker := util.NewStatusTicker()
 	go func() {
 		for range ticker.C {
 			zap.L().Info("Status update", zap.String("CmdName", cmd.CmdName), zap.Int("TweetCount", len(cmd.TweetIDs)))
@@ -57,7 +57,7 @@ func (cmd *UserFavoriteCmd) Execute() {
 			zap.L().Fatal(err.Error())
 			break
 		}
-		tools.Log(cmd.CmdName, []string{"Tweets", cmd.Props.UserID, strconv.Itoa(i)}, map[string]interface{}{"Tweets": tweets}, false)
+		util.Log(cmd.CmdName, []string{"Tweets", cmd.Props.UserID, strconv.Itoa(i)}, map[string]interface{}{"Tweets": tweets}, false)
 		for _, tweet := range tweets {
 			if tweet.RestID == cmd.Props.UntilID {
 				zap.L().Info("Reached until_id", zap.String("UntilID", cmd.Props.UntilID))
@@ -86,6 +86,6 @@ func (cmd *UserFavoriteCmd) Execute() {
 			"SecPerTweet":   time.Since(startDateTime).Seconds() / float64(len(cmd.TweetIDs)),
 		},
 	}
-	tools.Log(cmd.CmdName, []string{"Summary"}, summary, true)
+	util.Log(cmd.CmdName, []string{"Summary"}, summary, true)
 	zap.L().Info("End of the process")
 }

@@ -7,16 +7,16 @@ import (
 
 	"github.com/nharu-0630/twitter-api-client/api"
 	"github.com/nharu-0630/twitter-api-client/model"
-	"github.com/nharu-0630/twitter-api-client/tools"
+	"github.com/nharu-0630/twitter-api-client/util"
 	"go.uber.org/zap"
 )
 
 type UserFollowersProps struct {
-	SeedScreenName      string `yaml:"SeedScreenName"`
-	MaxFollowersRequest int    `yaml:"MaxFollowersRequest"`
-	MaxChildRequest     int    ` yaml:"MaxChildRequest"`
-	MaxUserLimit        int    `yaml:"MaxUserLimit"`
-	RetryOnGuestFail    bool   `yaml:"RetryOnGuestFail"`
+	SeedScreenName      string `yaml:"seed_screen_name"`
+	MaxFollowersRequest int    `yaml:"max_followers_request"`
+	MaxChildRequest     int    ` yaml:"max_child_request"`
+	MaxUserLimit        int    `yaml:"max_user_limit"`
+	RetryOnGuestFail    bool   `yaml:"retry_on_guest_fail"`
 }
 
 func (props UserFollowersProps) Validate() {
@@ -66,7 +66,7 @@ func (cmd *UserFollowersCmd) Execute() {
 	cmd.TweetIDs = make(map[string]string)
 	cmd.LeftChildRequest = cmd.Props.MaxChildRequest
 
-	ticker := tools.NewStatusTicker()
+	ticker := util.NewStatusTicker()
 	go func() {
 		for range ticker.C {
 			zap.L().Info("Status update", zap.String("CmdName", cmd.CmdName), zap.Int("UserCount", len(cmd.UserIDs)), zap.Int("TweetCount", len(cmd.TweetIDs)))
@@ -78,11 +78,11 @@ func (cmd *UserFollowersCmd) Execute() {
 	if err != nil {
 		zap.L().Fatal(err.Error())
 	}
-	tools.Log(cmd.CmdName, []string{"User", user.RestID}, map[string]interface{}{"User": user}, false)
+	util.Log(cmd.CmdName, []string{"User", user.RestID}, map[string]interface{}{"User": user}, false)
 	seedUserID = append(seedUserID, user.RestID)
 	cmd.UserIDs[user.RestID] = "ROOT"
 	cmd.userTweetsExecute(user.RestID)
-	tools.LogOverwrite(cmd.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
+	util.LogOverwrite(cmd.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
 
 	cmd.usersExecute(seedUserID)
 
@@ -102,7 +102,7 @@ func (cmd *UserFollowersCmd) Execute() {
 			"SecPerTweet":   time.Since(startDateTime).Seconds() / float64(len(cmd.TweetIDs)),
 		},
 	}
-	tools.Log(cmd.CmdName, []string{"Summary"}, summary, true)
+	util.Log(cmd.CmdName, []string{"Summary"}, summary, true)
 	zap.L().Info("End of the process")
 }
 
@@ -117,7 +117,7 @@ func (cmd *UserFollowersCmd) usersExecute(userIDs []string) {
 				zap.L().Error(err.Error())
 				break
 			}
-			tools.Log(cmd.CmdName, []string{"Followers", userID, strconv.Itoa(i)}, map[string]interface{}{"Followers": followers}, false)
+			util.Log(cmd.CmdName, []string{"Followers", userID, strconv.Itoa(i)}, map[string]interface{}{"Followers": followers}, false)
 			for _, follower := range followers {
 				if _, exists := cmd.UserIDs[follower.RestID]; !exists {
 					cmd.UserIDs[follower.RestID] = userID
@@ -125,7 +125,7 @@ func (cmd *UserFollowersCmd) usersExecute(userIDs []string) {
 						cmd.userTweetsExecute(follower.RestID)
 						childUserIDs = append(childUserIDs, follower.RestID)
 					}
-					tools.LogOverwrite(cmd.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
+					util.LogOverwrite(cmd.CmdName, []string{"UserIDs"}, map[string]interface{}{"UserIDs": cmd.UserIDs}, false)
 				}
 			}
 			if len(cmd.UserIDs) > cmd.Props.MaxUserLimit {
@@ -165,5 +165,5 @@ func (cmd *UserFollowersCmd) userTweetsExecute(userID string) {
 			cmd.TweetIDs[tweet.RestID] = userID
 		}
 	}
-	tools.Log(cmd.CmdName, []string{"Tweets", userID}, map[string]interface{}{"Tweets": tweets}, false)
+	util.Log(cmd.CmdName, []string{"Tweets", userID}, map[string]interface{}{"Tweets": tweets}, false)
 }
