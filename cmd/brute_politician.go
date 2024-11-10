@@ -11,17 +11,21 @@ import (
 
 type BrutePoliticianProps struct {
 	model.Config `yaml:",inline"`
-	Politicians  []struct {
+	IntervalDays struct {
+		PerRequest int `yaml:"per_request"` // 検索リクエストの絞り込み期間の日数
+		PerUser    int `yaml:"per_user"`    // 同一ユーザに連続して検索リクエストを送信する間隔の日数
+	} `yaml:"interval_days"`
+	Timestamp struct {
+		Since time.Time `yaml:"since"` // 検索リクエストの開始日時
+		Until time.Time `yaml:"until"` // 検索リクエストの終了日時
+	} `yaml:"timestamp"`
+	Politicians []struct {
 		BlockName      string `yaml:"block_name"`      // 政治家の所属ブロック名
 		PartyName      string `yaml:"party_name"`      // 政治家の所属政党名
 		CandidateKanji string `yaml:"candidate_kanji"` // 政治家の漢字氏名
 		CandidateKana  string `yaml:"candidate_kana"`  // 政治家のカナ氏名
 		XID            string `yaml:"x_id"`            // 政治家のTwitter ID
 	} `yaml:"politicians"`
-	RequestIntervalDays int       `yaml:"request_interval_days"` // 検索リクエストの絞り込み期間の日数
-	IntervalDays        int       `yaml:"interval_days"`         // 同一ユーザに連続して検索リクエストを送信する間隔の日数
-	SinceTimestamp      time.Time `yaml:"since_timestamp"`       // 検索リクエストの開始日時
-	UntilTimestamp      time.Time `yaml:"until_timestamp"`       // 検索リクエストの終了日時
 }
 
 type BrutePolitician struct {
@@ -43,9 +47,9 @@ func (bp *BrutePolitician) Execute() {
 		partyMapIdx[politician.PartyName] = 0
 	}
 
-	sinceTimestamp := bp.Props.SinceTimestamp
-	for sinceTimestamp.Before(bp.Props.UntilTimestamp) {
-		untilTimestamp := sinceTimestamp.AddDate(0, 0, bp.Props.IntervalDays)
+	sinceTimestamp := bp.Props.Timestamp.Since
+	for sinceTimestamp.Before(bp.Props.Timestamp.Until) {
+		untilTimestamp := sinceTimestamp.AddDate(0, 0, bp.Props.IntervalDays.PerUser)
 		zap.L().Debug("対象の日時範囲", zap.Time("since_timestamp", sinceTimestamp), zap.Time("until_timestamp", untilTimestamp))
 		for {
 			flag := true
@@ -59,7 +63,7 @@ func (bp *BrutePolitician) Execute() {
 
 				childSinceTimestamp := sinceTimestamp
 				for childSinceTimestamp.Before(untilTimestamp) {
-					childUntilTimestamp := childSinceTimestamp.AddDate(0, 0, bp.Props.RequestIntervalDays)
+					childUntilTimestamp := childSinceTimestamp.AddDate(0, 0, bp.Props.IntervalDays.PerRequest)
 					zap.L().Debug("検索リクエストの日時範囲", zap.Time("since_timestamp", childSinceTimestamp), zap.Time("until_timestamp", childUntilTimestamp))
 					rawQuery := "(from:" + politician.XID + ") until:" + childUntilTimestamp.Format("2006-01-02") + " since:" + childSinceTimestamp.Format("2006-01-02")
 					var resTweets []model.Tweet

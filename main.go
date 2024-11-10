@@ -52,11 +52,12 @@ func main() {
 	}
 
 	cmdMap := map[string]interface{}{
-		"politician":      &cmd.PoliticianCmd{},
-		"user_favorite":   &cmd.UserFavoriteCmd{},
-		"user_followers":  &cmd.UserFollowersCmd{},
-		"user_followings": &cmd.UserFollowingsCmd{},
-		"user_ids":        &cmd.UserIDsCmd{},
+		"brute_politician": &cmd.BrutePolitician{},
+		"politician":       &cmd.PoliticianCmd{},
+		"user_favorite":    &cmd.UserFavoriteCmd{},
+		"user_followers":   &cmd.UserFollowersCmd{},
+		"user_followings":  &cmd.UserFollowingsCmd{},
+		"user_ids":         &cmd.UserIDsCmd{},
 	}
 
 	instance, exists := cmdMap[config.Type]
