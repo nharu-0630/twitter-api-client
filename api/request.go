@@ -62,7 +62,7 @@ func (c *Client) downloadMediaByOriginalURL(dirName string, originalURL string, 
 		return errors.New("output directory is not set")
 	}
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		os.Mkdir(outputDir, 0755)
+		os.MkdirAll(outputDir, 0755)
 	}
 	outputDir = path.Join(outputDir, dirName)
 	parsedCreatedAt, err := time.Parse(time.RubyDate, createdAt)
@@ -72,7 +72,7 @@ func (c *Client) downloadMediaByOriginalURL(dirName string, originalURL string, 
 	createdAt = parsedCreatedAt.Format("20060102_150405")
 	outputDir = path.Join(outputDir, screenName+"-"+tweetID+"-"+createdAt+"-"+dirSuffix)
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		os.Mkdir(outputDir, 0755)
+		os.MkdirAll(outputDir, 0755)
 	}
 	fileName := screenName + "-" + tweetID + "-" + createdAt + "-" + suffix + strconv.Itoa(index)
 	mediaPath := path.Join(outputDir, fileName+"."+ext)

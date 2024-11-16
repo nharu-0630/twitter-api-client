@@ -15,11 +15,11 @@ func LogRaw(keys []string, res map[string]interface{}, indent bool) error {
 		return errors.New("output directory is not set")
 	}
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		os.Mkdir(outputDir, 0755)
+		os.MkdirAll(outputDir, 0755)
 	}
 	outputDir = path.Join(outputDir, "raw")
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		os.Mkdir(outputDir, 0755)
+		os.MkdirAll(outputDir, 0755)
 	}
 	timestamp := time.Now().Format("20060102150405")
 	keys = append(keys, timestamp)
@@ -52,11 +52,11 @@ func Log(dir string, keys []string, res map[string]interface{}, indent bool) err
 		return errors.New("output directory is not set")
 	}
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		os.Mkdir(outputDir, 0755)
+		os.MkdirAll(outputDir, 0755)
 	}
 	outputDir = path.Join(outputDir, dir)
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		os.Mkdir(outputDir, 0755)
+		os.MkdirAll(outputDir, 0755)
 	}
 	timestamp := time.Now().Format("20060102150405")
 	keys = append(keys, timestamp)
@@ -89,11 +89,11 @@ func LogOverwrite(dir string, keys []string, res map[string]interface{}, indent 
 		return errors.New("output directory is not set")
 	}
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		os.Mkdir(outputDir, 0755)
+		os.MkdirAll(outputDir, 0755)
 	}
 	outputDir = path.Join(outputDir, dir)
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		os.Mkdir(outputDir, 0755)
+		os.MkdirAll(outputDir, 0755)
 	}
 	encodedKeys := strings.Join(keys, "_")
 	fileName := path.Join(outputDir, encodedKeys+".json")
