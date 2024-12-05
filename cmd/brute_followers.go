@@ -22,7 +22,7 @@ type BruteFollowersProps struct {
 	Queries []struct {
 		Key         string   `yaml:"key"`
 		ScreenNames []string `yaml:"screen_names"`
-	}
+	} `yaml:"queries"`
 }
 
 type BruteFollowers struct {
