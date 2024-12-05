@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"time"
+
 	"github.com/nharu-0630/twitter-api-client/api"
 	"github.com/nharu-0630/twitter-api-client/model"
 	"github.com/nharu-0630/twitter-api-client/util"
@@ -13,6 +15,10 @@ type BruteFollowersProps struct {
 		PerUser  int `yaml:"per_user"`
 		PerTweet int `yaml:"per_tweet"`
 	} `yaml:"max_limit"`
+	Timestamp struct {
+		Since time.Time `yaml:"since"`
+		Until time.Time `yaml:"until"`
+	} `yaml:"timestamp"`
 	Queries []struct {
 		Key         string   `yaml:"key"`
 		ScreenNames []string `yaml:"screen_names"`
@@ -92,7 +98,9 @@ func (bf *BruteFollowers) Execute() {
 			tweets := []model.Tweet{}
 			bottomCursor := ""
 			for {
-				res, cursor, err := bf.ClientsPipe.SearchTimeline("(from:"+user.Legacy.ScreenName+")", bottomCursor)
+				rawQuery := "from:" + user.Legacy.ScreenName
+				rawQuery = rawQuery + " until:" + bf.Props.Timestamp.Until.Format("2006-01-02") + " since:" + bf.Props.Timestamp.Since.Format("2006-01-02")
+				res, cursor, err := bf.ClientsPipe.SearchTimeline(rawQuery, bottomCursor)
 				if err != nil {
 					zap.L().Error("ツイートの取得に失敗しました", zap.String("screen_name", user.Legacy.ScreenName), zap.Error(err))
 					break
