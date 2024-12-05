@@ -61,7 +61,7 @@ func (bf *BruteFollowers) Execute() {
 			followers := []model.User{}
 			bottomCursor := ""
 			for {
-				res, cursor, err := bf.ClientsPipe.Followers(user.ID, bottomCursor)
+				res, cursor, err := bf.ClientsPipe.Followers(user.RestID, bottomCursor)
 				if err != nil {
 					zap.L().Error("フォロワーの取得に失敗しました", zap.String("screen_name", screenName), zap.Error(err))
 					break
