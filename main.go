@@ -52,6 +52,7 @@ func main() {
 	}
 
 	cmdMap := map[string]interface{}{
+		"brute_followers":  &cmd.BruteFollowers{},
 		"brute_politician": &cmd.BrutePolitician{},
 		"brute_query":      &cmd.BruteQuery{},
 		"politician":       &cmd.PoliticianCmd{},
